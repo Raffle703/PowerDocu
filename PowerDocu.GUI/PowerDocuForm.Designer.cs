@@ -400,10 +400,19 @@ namespace PowerDocu.GUI
                 AutoSize = true
             };
             settingsPanel.Controls.Add(otherOptionsGroup);
+            checkForUpdatesOnLaunchCheckBox = new CheckBox()
+            {
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "Check for updates on launch",
+                Checked = true,
+                Size = new Size(convertToDPISpecific(300), convertToDPISpecific(30)),
+                Location = new Point(convertToDPISpecific(15), convertToDPISpecific(20))
+            };
+            otherOptionsGroup.Controls.Add(checkForUpdatesOnLaunchCheckBox);
             saveConfigButton = new IconButton()
             {
                 Size = new Size(convertToDPISpecific(42), convertToDPISpecific(42)),
-                Location = new Point(convertToDPISpecific(15), convertToDPISpecific(20)),
+                Location = new Point(convertToDPISpecific(15), checkForUpdatesOnLaunchCheckBox.Height + checkForUpdatesOnLaunchCheckBox.Location.Y + convertToDPISpecific(10)),
                 IconChar = IconChar.Save,
                 IconColor = Color.Green,
                 IconSize = convertToDPISpecific(32),
@@ -414,7 +423,7 @@ namespace PowerDocu.GUI
             otherOptionsGroup.Controls.Add(saveConfigButton);
             saveConfigLabel = new Label()
             {
-                Location = new Point(convertToDPISpecific(10) + saveConfigButton.Width + saveConfigButton.Location.X, convertToDPISpecific(25)),
+                Location = new Point(convertToDPISpecific(10) + saveConfigButton.Width + saveConfigButton.Location.X, saveConfigButton.Location.Y + convertToDPISpecific(5)),
                 Text = "Save current configuration as default",
                 Width = convertToDPISpecific(250),
                 Height = convertToDPISpecific(30)
@@ -587,7 +596,7 @@ namespace PowerDocu.GUI
         private TextBox appStatusTextBox;
         private ComboBox outputFormatComboBox, flowActionSortOrderComboBox;
         private GroupBox outputFormatGroup, documentationOptionsGroup, otherOptionsGroup;
-        private CheckBox documentDefaultsCheckBox, documentSampleDataCheckBox, appPropertiesCheckBox, variablesCheckBox, dataSourcesCheckBox, resourcesCheckBox, controlsCheckBox, appsCheckBox, flowsCheckBox, solutionCheckBox;
+        private CheckBox documentDefaultsCheckBox, documentSampleDataCheckBox, appPropertiesCheckBox, variablesCheckBox, dataSourcesCheckBox, resourcesCheckBox, controlsCheckBox, appsCheckBox, flowsCheckBox, solutionCheckBox, checkForUpdatesOnLaunchCheckBox;
         private RadioButton documentChangesOnlyRadioButton, documentEverythingRadioButton;
         private Label wordTemplateInfoLabel, fileToParseInfoLabel, outputFormatInfoLabel,
                         flowActionSortOrderInfoLabel, newReleaseLabel, updateConnectorIconsLabel,

@@ -48,6 +48,7 @@ namespace PowerDocu.GUI
             dataSourcesCheckBox.Checked = configHelper.documentAppDataSources;
             resourcesCheckBox.Checked = configHelper.documentAppResources;
             controlsCheckBox.Checked = configHelper.documentAppControls;
+            checkForUpdatesOnLaunchCheckBox.Checked = configHelper.checkForUpdatesOnLaunch;
 
             // Load Word template if available
             if (configHelper.wordTemplate != null)
@@ -61,7 +62,10 @@ namespace PowerDocu.GUI
         private async void InitialChecks()
         {
             //check for newer release
-            if (await PowerDocuReleaseHelper.HasNewerPowerDocuRelease())
+            if (
+                checkForUpdatesOnLaunchCheckBox.Checked
+                && await PowerDocuReleaseHelper.HasNewerPowerDocuRelease()
+            )
             {
                 newReleaseButton.Visible = true;
                 newReleaseLabel.Text += PowerDocuReleaseHelper.latestVersionTag;
@@ -176,6 +180,7 @@ namespace PowerDocu.GUI
             configHelper.documentAppDataSources = dataSourcesCheckBox.Checked;
             configHelper.documentAppResources = resourcesCheckBox.Checked;
             configHelper.documentAppControls = controlsCheckBox.Checked;
+            configHelper.checkForUpdatesOnLaunch = checkForUpdatesOnLaunchCheckBox.Checked;
         }
 
         private async void SaveConfigButton_Click(object sender, EventArgs e)

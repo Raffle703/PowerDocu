@@ -179,6 +179,9 @@ namespace PowerDocu.SolutionDocumenter
                     case "Entity":
                         renderEntities();
                         break;
+                    case "Option Set":
+                        renderOptionSets();
+                        break;
                     default:
                         solutionDoc.Root.Add(new MdHeading(componentType, 3));
                         List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
@@ -240,6 +243,39 @@ namespace PowerDocu.SolutionDocumenter
             else
             {
                 solutionDoc.Root.Add(new MdParagraph(new MdTextSpan("This solution has no dependencies.")));
+            }
+        }
+
+        private void renderOptionSets()
+        {
+            solutionDoc.Root.Add(new MdHeading("Option Sets", 3));
+            List<OptionSetEntity> optionSets = content.solution.Customizations.getOptionSets();
+            if (optionSets.Count > 0)
+            {
+                foreach (OptionSetEntity optionSet in optionSets)
+                {
+                    solutionDoc.Root.Add(new MdHeading(optionSet.GetDisplayName() + " (" + optionSet.Name + ")", 4));
+                    List<MdTableRow> tableRows = new List<MdTableRow>
+                    {
+                        new MdTableRow("Type", optionSet.OptionSetType ?? ""),
+                        new MdTableRow("Is Global", optionSet.IsGlobal ? "Yes" : "No"),
+                        new MdTableRow("Is Customizable", optionSet.IsCustomizable ? "Yes" : "No")
+                    };
+                    if (!String.IsNullOrEmpty(optionSet.Description))
+                        tableRows.Add(new MdTableRow("Description", optionSet.Description));
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Property", "Value"), tableRows));
+                    
+                    if (optionSet.Options.Count > 0)
+                    {
+                        solutionDoc.Root.Add(new MdParagraph(new MdTextSpan("Options:")));
+                        List<MdTableRow> optionTableRows = new List<MdTableRow>();
+                        foreach (OptionSetOption option in optionSet.Options)
+                        {
+                            optionTableRows.Add(new MdTableRow(option.Value ?? "", option.Label ?? ""));
+                        }
+                        solutionDoc.Root.Add(new MdTable(new MdTableRow("Value", "Label"), optionTableRows));
+                    }
+                }
             }
         }
 

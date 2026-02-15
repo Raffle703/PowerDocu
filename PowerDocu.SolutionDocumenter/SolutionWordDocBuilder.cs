@@ -155,7 +155,8 @@ namespace PowerDocu.SolutionDocumenter
             ApplyStyleToParagraph("Heading2", para);
             para = body.AppendChild(new Paragraph());
             run = para.AppendChild(new Run());
-            foreach(EnvironmentVariableEntity environmentVariable in content.solution.EnvironmentVariables) {
+            foreach (EnvironmentVariableEntity environmentVariable in content.solution.EnvironmentVariables)
+            {
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
                 run.AppendChild(new Text(environmentVariable.DisplayName));
@@ -194,6 +195,9 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     case "Entity":
                         renderEntities();
+                        break;
+                    case "Option Set":
+                        renderOptionSets();
                         break;
                     default:
                         para = body.AppendChild(new Paragraph());
@@ -281,7 +285,7 @@ namespace PowerDocu.SolutionDocumenter
                 Table table = CreateTable();
                 table.Append(CreateRow(new Text("Primary Column"), new Text(tableEntity.getPrimaryColumn())));
                 table.Append(CreateRow(new Text("Description"), new Text(tableEntity.getDescription())));
-                table.Append(CreateRow(new Text("Auditing"), new Text(tableEntity.IsAuditEnabled()?"Enabled":"Disabled")));
+                table.Append(CreateRow(new Text("Auditing"), new Text(tableEntity.IsAuditEnabled() ? "Enabled" : "Disabled")));
                 body.Append(table);
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
@@ -300,7 +304,7 @@ namespace PowerDocu.SolutionDocumenter
                         new Text(columnEntity.getDisplayName() + primaryNameColumn),
                         new Text(columnEntity.getName()),
                         new Text(columnEntity.getDataType()),
-                        new Text(columnEntity.IsAuditEnabled()?"Enabled":"Disabled"),
+                        new Text(columnEntity.IsAuditEnabled() ? "Enabled" : "Disabled"),
                         new Text(columnEntity.isCustomizable().ToString()),
                         new Text(columnEntity.isRequired().ToString()),
                         new Text(columnEntity.isSearchable().ToString())));
@@ -333,6 +337,49 @@ namespace PowerDocu.SolutionDocumenter
             body.AppendChild(new Paragraph(new Run(
                 InsertSvgImage(mainPart.GetIdOfPart(svgPart), mainPart.GetIdOfPart(imagePart), imageWidth, imageHeight)
             )));
+            para = body.AppendChild(new Paragraph());
+            run = para.AppendChild(new Run());
+        }
+
+        private void renderOptionSets()
+        {
+            Paragraph para = body.AppendChild(new Paragraph());
+            Run run = para.AppendChild(new Run());
+            run.AppendChild(new Text("Option Sets"));
+            ApplyStyleToParagraph("Heading2", para);
+            List<OptionSetEntity> optionSets = content.solution.Customizations.getOptionSets();
+            if (optionSets.Count > 0)
+            {
+                foreach (OptionSetEntity optionSet in optionSets)
+                {
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run(new Text(optionSet.GetDisplayName() + " (" + optionSet.Name + ")")));
+                    ApplyStyleToParagraph("Heading3", para);
+                    Table table = CreateTable();
+                    table.Append(CreateRow(new Text("Type"), new Text(optionSet.OptionSetType)));
+                    table.Append(CreateRow(new Text("Is Global"), new Text(optionSet.IsGlobal ? "Yes" : "No")));
+                    table.Append(CreateRow(new Text("Is Customizable"), new Text(optionSet.IsCustomizable ? "Yes" : "No")));
+                    if (!String.IsNullOrEmpty(optionSet.Description))
+                        table.Append(CreateRow(new Text("Description"), new Text(optionSet.Description)));
+                    body.Append(table);
+                    
+                    if (optionSet.Options.Count > 0)
+                    {
+                        para = body.AppendChild(new Paragraph());
+                        run = para.AppendChild(new Run());
+                        run.AppendChild(new Text("Options:"));
+                        table = CreateTable();
+                        table.Append(CreateHeaderRow(new Text("Value"), new Text("Label")));
+                        foreach (OptionSetOption option in optionSet.Options)
+                        {
+                            table.Append(CreateRow(new Text(option.Value ?? ""), new Text(option.Label ?? "")));
+                        }
+                        body.Append(table);
+                    }
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run());
+                }
+            }
             para = body.AppendChild(new Paragraph());
             run = para.AppendChild(new Run());
         }

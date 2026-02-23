@@ -14,6 +14,8 @@ namespace PowerDocu.GUI
         public bool Markdown { get; set; }
         [Option('w', "word", HelpText = "Format document as Word", Required = false)]
         public bool Word { get; set; }
+        [Option('h', "html", HelpText = "Format document as HTML", Required = false)]
+        public bool Html { get; set; }
         [Option('f', "fullDocumentation", HelpText = "Document changes only or all properties", Required = false)]
         public bool FullDocumentation { get; set; }
         [Option('c', "changesOnly", HelpText = "Create full set of documentation (true) or images only (false)", Required = false)]
@@ -47,9 +49,10 @@ namespace PowerDocu.GUI
 
         internal string FileFormat => this switch
         {
-            { Word: true, Markdown: true } => OutputFormatHelper.All,
-            { Word: false, Markdown: true } => OutputFormatHelper.Markdown,
-            { Word: true, Markdown: false } => OutputFormatHelper.Word,
+            { Word: true, Markdown: true, Html: true } => OutputFormatHelper.All,
+            { Word: false, Markdown: true, Html: false } => OutputFormatHelper.Markdown,
+            { Word: false, Markdown: false, Html: true } => OutputFormatHelper.Html,
+            { Word: true, Markdown: false, Html: false } => OutputFormatHelper.Word,
             _ => OutputFormatHelper.Word
         };
 

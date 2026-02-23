@@ -7,7 +7,8 @@ namespace PowerDocu.AppDocumenter
 {
     class AppDocumentationContent
     {
-        public string folderPath, filename;
+        public string folderPath,
+            filename;
         public string ID;
         public string Name;
         public AppProperties appProperties;
@@ -16,10 +17,28 @@ namespace PowerDocu.AppDocumenter
         public AppVariablesInfo appVariablesInfo;
         public AppControls appControls;
         public Dictionary<string, MemoryStream> ResourceStreams;
+
         // App Properties that are colours
-        public readonly string[] ColourProperties = new string[] { "BorderColor", "Color", "DisabledBorderColor", "DisabledColor", "DisabledFill", "DisabledSectionColor",
-                    "DisabledSelectionFill", "Fill", "FocusedBorderColor", "HoverBorderColor", "HoverColor", "HoverFill", "PressedBorderColor","PressedColor",
-                    "PressedFill", "SelectionColor", "SelectionFill" };
+        public readonly string[] ColourProperties = new string[]
+        {
+            "BorderColor",
+            "Color",
+            "DisabledBorderColor",
+            "DisabledColor",
+            "DisabledFill",
+            "DisabledSectionColor",
+            "DisabledSelectionFill",
+            "Fill",
+            "FocusedBorderColor",
+            "HoverBorderColor",
+            "HoverColor",
+            "HoverFill",
+            "PressedBorderColor",
+            "PressedColor",
+            "PressedFill",
+            "SelectionColor",
+            "SelectionFill"
+        };
 
         public AppDocumentationContent(AppEntity app, string path)
         {
@@ -45,11 +64,18 @@ namespace PowerDocu.AppDocumenter
         public string headerContextVariables = "Context Variables";
         public string headerCollections = "Collections";
         public string infoText = "";
-        public Dictionary<string, List<ControlPropertyReference>> variableCollectionControlReferences;
-        public HashSet<string> globalVariables, contextVariables, collections;
+        public Dictionary<
+            string,
+            List<ControlPropertyReference>
+        > variableCollectionControlReferences;
+        public HashSet<string> globalVariables,
+            contextVariables,
+            collections;
+
         public AppVariablesInfo(AppEntity app)
         {
-            infoText = $"There are {app.GlobalVariables.Count} Global Variables, {app.ContextVariables.Count} Context Variables and {app.Collections.Count} Collections.";
+            infoText =
+                $"There are {app.GlobalVariables.Count} Global Variables, {app.ContextVariables.Count} Context Variables and {app.Collections.Count} Collections.";
             variableCollectionControlReferences = app.VariableCollectionControlReferences;
             globalVariables = app.GlobalVariables.OrderBy(o => o).ToHashSet();
             contextVariables = app.ContextVariables.OrderBy(o => o).ToHashSet();
@@ -62,6 +88,7 @@ namespace PowerDocu.AppDocumenter
         public string header = "DataSources";
         public string infoText = "";
         public List<DataSource> dataSources;
+
         public AppDataSources(AppEntity app)
         {
             infoText = $"A total of {app.DataSources.Count} DataSources are located in the app:";
@@ -94,30 +121,65 @@ namespace PowerDocu.AppDocumenter
         public List<Expression> appProperties;
         public Expression appPreviewsFlagProperty;
         public string[] propertiesToSkip = new string[] { "AppPreviewFlagsMap", "ControlCount" };
-        public string[] OverviewProperties = new string[] {"AppCreationSource", "AppDescription", "AppName", "BackgroundColor", "DocumentAppType", "DocumentLayoutHeight", "DocumentLayoutOrientation",
-                    "DocumentLayoutWidth", "IconColor", "IconName", "Id", "LastSavedDateTimeUTC", "LogoFileName", "Name"};
+        public string[] OverviewProperties = new string[]
+        {
+            "AppCreationSource",
+            "AppDescription",
+            "AppName",
+            "BackgroundColor",
+            "DocumentAppType",
+            "DocumentLayoutHeight",
+            "DocumentLayoutOrientation",
+            "DocumentLayoutWidth",
+            "IconColor",
+            "IconName",
+            "Id",
+            "LastSavedDateTimeUTC",
+            "LogoFileName",
+            "Name"
+        };
         public Dictionary<string, string> statisticsTable = new Dictionary<string, string>();
+
         public AppProperties(AppEntity app)
         {
             header = "Power App Documentation - " + app.Name;
-            Expression appLogoExp = app.Properties.Find(o => o.expressionOperator == "LogoFileName");
+            Expression appLogoExp = app.Properties.Find(
+                o => o.expressionOperator == "LogoFileName"
+            );
             appLogo = appLogoExp?.expressionOperands[0].ToString();
-            Expression bgColour = app.Properties.Find(o => o.expressionOperator == "BackgroundColor");
+            Expression bgColour = app.Properties.Find(
+                o => o.expressionOperator == "BackgroundColor"
+            );
             appBackgroundColour = bgColour?.expressionOperands[0].ToString();
-            statisticsTable.Add("Screens", "" + app.Controls.Where(o => o.Type == "screen").ToList().Count);
+            statisticsTable.Add(
+                "Screens",
+                "" + app.Controls.Where(o => o.Type == "screen").ToList().Count
+            );
             List<ControlEntity> allControls = new List<ControlEntity>();
             foreach (ControlEntity control in app.Controls)
             {
                 allControls.Add(control);
                 allControls.AddRange(AppDocumentationHelper.getAllChildControls(control));
             }
-            statisticsTable.Add("Controls (excluding Screens)", "" + (allControls.Count - app.Controls.Where(o => o.Type == "screen").ToList().Count));
-            statisticsTable.Add("Variables", "" + (app.GlobalVariables.Count + app.ContextVariables.Count));
+            statisticsTable.Add(
+                "Controls (excluding Screens)",
+                ""
+                    + (
+                        allControls.Count
+                        - app.Controls.Where(o => o.Type == "screen").ToList().Count
+                    )
+            );
+            statisticsTable.Add(
+                "Variables",
+                "" + (app.GlobalVariables.Count + app.ContextVariables.Count)
+            );
             statisticsTable.Add("Collections", "" + app.Collections.Count);
             statisticsTable.Add("Data Sources", "" + app.DataSources.Count);
             statisticsTable.Add("Resources", "" + app.Resources.Count);
             appProperties = app.Properties.OrderBy(o => o.expressionOperator).ToList();
-            appPreviewsFlagProperty = app.Properties.Find(o => o.expressionOperator == "AppPreviewFlagsMap");
+            appPreviewsFlagProperty = app.Properties.Find(
+                o => o.expressionOperator == "AppPreviewFlagsMap"
+            );
         }
     }
 
@@ -132,7 +194,8 @@ namespace PowerDocu.AppDocumenter
         public string imageScreenNavigation = "ScreenNavigation";
         public List<ControlEntity> controls;
         public List<ControlEntity> allControls = new List<ControlEntity>();
-        public string[] controlPropertiesToSkip = new string[] { "X", "Y", "ZIndex"};
+        public string[] controlPropertiesToSkip = new string[] { "X", "Y", "ZIndex" };
+
         public AppControls(AppEntity app)
         {
             controls = app.Controls.OrderBy(o => o.Name).ToList();

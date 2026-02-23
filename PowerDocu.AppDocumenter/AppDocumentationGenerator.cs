@@ -124,6 +124,11 @@ namespace PowerDocu.AppDocumenter
                                 NotificationHelper.SendNotification("Creating Markdown documentation");
                                 AppMarkdownBuilder markdownFile = new AppMarkdownBuilder(content);
                             }
+                            if (config.outputFormat.Equals(OutputFormatHelper.Html) || config.outputFormat.Equals(OutputFormatHelper.All))
+                            {
+                                NotificationHelper.SendNotification("Creating HTML documentation");
+                                AppHtmlBuilder htmlFile = new AppHtmlBuilder(content, config.documentChangesOnlyCanvasApps, config.documentDefaultValuesCanvasApps, config.documentSampleData);
+                            }
                         }
                     }
                 }

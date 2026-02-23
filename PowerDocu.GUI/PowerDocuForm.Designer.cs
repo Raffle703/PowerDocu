@@ -154,7 +154,8 @@ namespace PowerDocu.GUI
             };
             outputFormatComboBox.Items.AddRange(new object[] {OutputFormatHelper.All,
                                                                 OutputFormatHelper.Word,
-                                                                OutputFormatHelper.Markdown
+                                                                OutputFormatHelper.Markdown,
+                                                                OutputFormatHelper.Html
                         });
             outputFormatComboBox.SelectedIndexChanged += new EventHandler(OutputFormatComboBox_Changed);
             outputFormatComboBox.SelectedIndex = 0;
@@ -492,8 +493,7 @@ namespace PowerDocu.GUI
 
             generateDocuPanel = new Panel()
             {
-                Location = new Point(0, 0),
-                Size = new Size(ClientSize.Width - convertToDPISpecific(30), ClientSize.Height - convertToDPISpecific(25))
+                Dock = DockStyle.Fill
             };
 
             powerDocuInfoLabel = new Label()
@@ -581,6 +581,46 @@ namespace PowerDocu.GUI
                 AutoSize = true
             };
             generateDocuPanel.Controls.Add(selectedFilesToDocumentLabel);
+
+            // Process status image list for file tracking
+            processStatusImageList = new ImageList()
+            {
+                ImageSize = new Size(convertToDPISpecific(16), convertToDPISpecific(16)),
+                ColorDepth = ColorDepth.Depth32Bit
+            };
+            processStatusImageList.Images.Add("pending", FontAwesome.Sharp.IconChar.Circle.ToBitmap(Color.LightGray, convertToDPISpecific(16)));
+            processStatusImageList.Images.Add("processing", FontAwesome.Sharp.IconChar.Spinner.ToBitmap(Color.DodgerBlue, convertToDPISpecific(16)));
+            processStatusImageList.Images.Add("completed", FontAwesome.Sharp.IconChar.CheckCircle.ToBitmap(Color.Green, convertToDPISpecific(16)));
+            processStatusImageList.Images.Add("error", FontAwesome.Sharp.IconChar.ExclamationCircle.ToBitmap(Color.Red, convertToDPISpecific(16)));
+
+            // Process info list view showing files and their processing status
+            processInfoListView = new ListView()
+            {
+                Location = new Point(convertToDPISpecific(15), openOutputFolderButton.Location.Y + openOutputFolderButton.Height + convertToDPISpecific(15)),
+                Size = new Size(convertToDPISpecific(400), convertToDPISpecific(200)),
+                View = View.Details,
+                SmallImageList = processStatusImageList,
+                FullRowSelect = true,
+                HeaderStyle = ColumnHeaderStyle.Nonclickable,
+                GridLines = false,
+                Visible = false
+            };
+            processInfoListView.Columns.Add("File", convertToDPISpecific(350));
+            processInfoListView.Columns.Add("Status", convertToDPISpecific(150));
+            generateDocuPanel.Controls.Add(processInfoListView);
+
+            generateDocuPanel.Resize += (sender, e) =>
+            {
+                processInfoListView.Size = new Size(
+                    generateDocuPanel.ClientSize.Width - convertToDPISpecific(30),
+                    generateDocuPanel.ClientSize.Height - processInfoListView.Location.Y - convertToDPISpecific(10)
+                );
+                if (processInfoListView.Columns.Count > 1)
+                {
+                    processInfoListView.Columns[0].Width = processInfoListView.ClientSize.Width - processInfoListView.Columns[1].Width - convertToDPISpecific(5);
+                }
+            };
+
             tabPage.Controls.Add(generateDocuPanel);
             return tabPage;
         }
@@ -605,6 +645,8 @@ namespace PowerDocu.GUI
         private TabControl dynamicTabControl;
         private PictureBox statusIconPictureBox;
         private Panel settingsPanel, generateDocuPanel;
+        private ListView processInfoListView;
+        private ImageList processStatusImageList;
         public ConfigHelper configHelper;
 
         #endregion

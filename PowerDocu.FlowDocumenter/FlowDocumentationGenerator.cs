@@ -55,6 +55,11 @@ namespace PowerDocu.FlowDocumenter
                                     NotificationHelper.SendNotification("Creating Markdown documentation");
                                     FlowMarkdownBuilder markdownFile = new FlowMarkdownBuilder(content);
                                 }
+                                if (config.outputFormat.Equals(OutputFormatHelper.Html) || config.outputFormat.Equals(OutputFormatHelper.All))
+                                {
+                                    NotificationHelper.SendNotification("Creating HTML documentation");
+                                    FlowHtmlBuilder htmlFile = new FlowHtmlBuilder(content);
+                                }
                             }
                         }
                     }

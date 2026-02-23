@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using PowerDocu.AppDocumenter;
 using PowerDocu.SolutionDocumenter;
 using PowerDocu.Common;
-using System.Linq;
 
 namespace PowerDocu.GUI
 {
@@ -96,13 +95,21 @@ namespace PowerDocu.GUI
             if (openFileToParseDialog.ShowDialog() == DialogResult.OK)
             {
                 selectedFilesToDocumentLabel.Text =
-                    "Select either the full documentation or just the image generation to start the documentation process for the following selected files:"
-                    + Environment.NewLine;
+                    "Start the full documentation or image generation for the selected files:";
+
+                // Populate the process info list view with selected files
+                processInfoListView.Items.Clear();
                 foreach (string fileName in openFileToParseDialog.FileNames)
                 {
-                    selectedFilesToDocumentLabel.Text +=
-                        "   " + Path.GetFileName(fileName) + Environment.NewLine;
+                    var item = new ListViewItem(Path.GetFileName(fileName))
+                    {
+                        ImageKey = "pending",
+                        Tag = fileName
+                    };
+                    item.SubItems.Add("Pending");
+                    processInfoListView.Items.Add(item);
                 }
+                processInfoListView.Visible = true;
                 startDocumentationButton.Visible = true;
                 startImageGenerationButton.Visible = true;
                 openOutputFolderButton.Visible = false;
@@ -220,8 +227,28 @@ namespace PowerDocu.GUI
             startDocumentationButton.IconColor = Color.DarkGray;
             startImageGenerationButton.IconColor = Color.DarkGray;
             openOutputFolderButton.Visible = false;
-            foreach (string fileName in openFileToParseDialog.FileNames)
+
+            // Reset all process info items to pending
+            for (int idx = 0; idx < processInfoListView.Items.Count; idx++)
             {
+                processInfoListView.Items[idx].ImageKey = "pending";
+                processInfoListView.Items[idx].SubItems[1].Text = "Pending";
+            }
+            processInfoListView.Refresh();
+
+            for (int i = 0; i < openFileToParseDialog.FileNames.Length; i++)
+            {
+                string fileName = openFileToParseDialog.FileNames[i];
+
+                // Update status to processing
+                if (i < processInfoListView.Items.Count)
+                {
+                    processInfoListView.Items[i].ImageKey = "processing";
+                    processInfoListView.Items[i].SubItems[1].Text = "Processing...";
+                    processInfoListView.EnsureVisible(i);
+                    processInfoListView.Refresh();
+                }
+
                 try
                 {
                     NotificationHelper.SendNotification(
@@ -250,6 +277,14 @@ namespace PowerDocu.GUI
                     openOutputFolderButton.Visible = true;
                     NotificationHelper.SendNotification("Documentation generation completed.");
                     statusLabel.Text = $"Documentation process completed";
+
+                    // Update status to completed
+                    if (i < processInfoListView.Items.Count)
+                    {
+                        processInfoListView.Items[i].ImageKey = "completed";
+                        processInfoListView.Items[i].SubItems[1].Text = "Completed \u2713";
+                        processInfoListView.Refresh();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -258,6 +293,14 @@ namespace PowerDocu.GUI
                         $"An error has occurred.\n\nError message: {ex.Message}\n\n"
                             + $"Details:\n\n{ex.StackTrace}"
                     );
+
+                    // Update status to error
+                    if (i < processInfoListView.Items.Count)
+                    {
+                        processInfoListView.Items[i].ImageKey = "error";
+                        processInfoListView.Items[i].SubItems[1].Text = "Error \u2717";
+                        processInfoListView.Refresh();
+                    }
                 }
                 finally
                 {

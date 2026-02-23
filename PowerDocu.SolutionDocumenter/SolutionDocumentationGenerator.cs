@@ -12,7 +12,7 @@ namespace PowerDocu.SolutionDocumenter
         private static List<FlowEntity> flows;
         private static List<AppEntity> apps;
 
-        public static void GenerateDocumentation(string filePath, bool fullDocumentation, ConfigHelper config, string outputPath=null)
+        public static void GenerateDocumentation(string filePath, bool fullDocumentation, ConfigHelper config, string outputPath = null)
         {
             if (File.Exists(filePath))
             {
@@ -55,6 +55,11 @@ namespace PowerDocu.SolutionDocumenter
                             if (config.outputFormat.Equals(OutputFormatHelper.Markdown) || config.outputFormat.Equals(OutputFormatHelper.All))
                             {
                                 SolutionMarkdownBuilder mdDoc = new SolutionMarkdownBuilder(solutionContent);
+                            }
+                            if (config.outputFormat.Equals(OutputFormatHelper.Html) || config.outputFormat.Equals(OutputFormatHelper.All))
+                            {
+                                NotificationHelper.SendNotification("Creating HTML Solution documentation");
+                                SolutionHtmlBuilder htmlDoc = new SolutionHtmlBuilder(solutionContent);
                             }
                         }
                     }

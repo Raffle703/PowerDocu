@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
@@ -21,6 +21,10 @@
   <PropertyGroup>
     <Version>2.4.1</Version>
     <Copyright>Rene Modery</Copyright>
+    <Authors>Rene Modery</Authors>
+    <Description>PowerDocu - Technical Documentation generator for Power Platform solutions</Description>
+    <PackageProjectUrl>https://github.com/modery/PowerDocu</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/modery/PowerDocu</RepositoryUrl>    
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <LangVersion>latest</LangVersion>

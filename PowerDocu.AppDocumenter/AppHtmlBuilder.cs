@@ -386,9 +386,10 @@ namespace PowerDocu.AppDocumenter
                 bitmap?.Save(content.folderPath + @"resources\" + control.Type + ".png");
             }
             string screenFile = screenFileNames.GetValueOrDefault(control.Screen()?.Name, "#");
+            string controlAnchor = SanitizeAnchorId(control.Name);
             StringBuilder sb = new StringBuilder("<ul>");
             sb.Append("<li>");
-            sb.Append($"<a href=\"{Encode(screenFile)}\">");
+            sb.Append($"<a href=\"{Encode(screenFile)}#{controlAnchor}\">");
             sb.Append(ImageWithClass(control.Type, "resources/" + control.Type + ".png", "icon-inline"));
             sb.Append($" {Encode(control.Name)}</a>");
             foreach (ControlEntity child in control.Children.OrderBy(o => o.Name).ToList())

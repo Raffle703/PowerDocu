@@ -286,13 +286,14 @@ namespace PowerDocu.AppDocumenter
             {
                 bitmap?.Save(content.folderPath + @"resources\" + control.Type + ".png");
             }
-            //link to the screen instead of the control directly for the moment, as the directly generated anchor link (#" + control.Name.ToLower()) doesn't work the same way in DevOps and GitHub
+            string screenFileName = ("screen " + control.Screen().Name + " " + content.filename + ".md").Replace(" ", "-");
+            string controlAnchor = control.Name.ToLowerInvariant().Replace(" ", "-");
             MdBulletList list = new MdBulletList(){
                                      new MdListItem(new MdLinkSpan(
                                             new MdCompositeSpan(
                                                 new MdImageSpan(control.Type, "resources/"+control.Type+".png"),
                                                 new MdTextSpan(" "+control.Name))
-                                        ,("screen " + control.Screen().Name + " " + content.filename + ".md").Replace(" ", "-")))};
+                                        , screenFileName + "#" + controlAnchor))};
 
             foreach (ControlEntity child in control.Children.OrderBy(o => o.Name).ToList())
             {
@@ -385,7 +386,7 @@ namespace PowerDocu.AppDocumenter
                         }
                         else
                         {
-                            tableRows.Add(new MdTableRow(rule.Property, getCodeBlock(rule.InvariantScript)));
+                            tableRows.Add(new MdTableRow(rule.Property, new MdRawMarkdownSpan(getCodeBlock(rule.InvariantScript))));
                         }
                     }
                 }
@@ -459,7 +460,7 @@ namespace PowerDocu.AppDocumenter
                      .Append("<td style=\"background-color:#ffcccc; width:50%;\">").Append(defaultValue).Append("</td></tr></table>");
                 return new MdTableRow(rule.Property, new MdRawMarkdownSpan(table.ToString()));
             }
-            return new MdTableRow(rule.Property, getCodeBlock(rule.InvariantScript));
+            return new MdTableRow(rule.Property, new MdRawMarkdownSpan(getCodeBlock(rule.InvariantScript)));
         }
 
         private void addAppDataSources()

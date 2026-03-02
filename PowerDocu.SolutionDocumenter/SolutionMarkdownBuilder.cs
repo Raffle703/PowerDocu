@@ -12,9 +12,11 @@ namespace PowerDocu.SolutionDocumenter
         private readonly SolutionDocumentationContent content;
         private readonly string solutionDocumentFileName;
         private readonly MdDocument solutionDoc;
-        public SolutionMarkdownBuilder(SolutionDocumentationContent contentDocumentation)
+        private readonly bool documentDefaultColumns;
+        public SolutionMarkdownBuilder(SolutionDocumentationContent contentDocumentation, bool documentDefaultColumns = false)
         {
             content = contentDocumentation;
+            this.documentDefaultColumns = documentDefaultColumns;
             Directory.CreateDirectory(content.folderPath);
             solutionDocumentFileName = ("solution " + content.filename + ".md").Replace(" ", "-");
             solutionDoc = new MdDocument();
@@ -210,7 +212,7 @@ namespace PowerDocu.SolutionDocumenter
                                         .ToList();
             if (dependencies.Count > 0)
             {
-                solutionDoc.Root.Add(new MdParagraph(new MdTextSpan("This solution has the following dependencies")));
+                solutionDoc.Root.Add(new MdParagraph(new MdTextSpan("This solution has the following dependencies: ")));
                 foreach (string solution in dependencies)
                 {
                     solutionDoc.Root.Add(new MdHeading("Solution: " + solution, 3));
@@ -325,27 +327,144 @@ namespace PowerDocu.SolutionDocumenter
                 {
                     new MdTableRow("Primary Column", tableEntity.getPrimaryColumn()),
                     new MdTableRow("Description", tableEntity.getDescription()),
-                    new MdTableRow("Ownership Type", tableEntity.GetOwnershipType()),
-                    new MdTableRow("Auditing", tableEntity.IsAuditEnabled()?"Enabled":"Disabled")
+                    new MdTableRow("Entity Set Name", tableEntity.GetEntitySetName()),
+                    new MdTableRow("Record Ownership", tableEntity.GetOwnershipType()),
+                    new MdTableRow("Auditing", tableEntity.IsAuditEnabled()?"Enabled":"Disabled"),
+                    new MdTableRow("Customizable", tableEntity.IsCustomizable()?"Yes":"No"),
+                    new MdTableRow("Change Tracking", tableEntity.IsChangeTrackingEnabled()?"Enabled":"Disabled"),
+                    new MdTableRow("Is Activity", tableEntity.IsActivity()?"Yes":"No"),
+                    new MdTableRow("Quick Create", tableEntity.IsQuickCreateEnabled()?"Enabled":"Disabled"),
+                    new MdTableRow("Connections", tableEntity.IsConnectionsEnabled()?"Enabled":"Disabled"),
+                    new MdTableRow("Duplicate Detection", tableEntity.IsDuplicateCheckSupported()?"Enabled":"Disabled"),
+                    new MdTableRow("Mobile Visible", tableEntity.IsVisibleInMobile()?"Yes":"No"),
+                    new MdTableRow("Introduced Version", tableEntity.GetIntroducedVersion())
                 };
                 solutionDoc.Root.Add(new MdTable(new MdTableRow("Property", "Value"), tableRows));
                 tableRows = new List<MdTableRow>();
 
                 if (tableEntity.GetColumns().Count > 0)
                 {
-                    foreach (ColumnEntity columnEntity in tableEntity.GetColumns())
+                    var columns = documentDefaultColumns
+                        ? tableEntity.GetColumns()
+                        : tableEntity.GetColumns().Where(c => !c.isDefaultColumn()).ToList();
+                    if (columns.Count > 0)
+                    {
+                    solutionDoc.Root.Add(new MdHeading("Columns", 5));
+                    foreach (ColumnEntity columnEntity in columns)
                     {
                         string primaryNameColumn = columnEntity.getDisplayMask().Contains("PrimaryName") ? " (Primary name column)" : "";
                         tableRows.Add(new MdTableRow(columnEntity.getDisplayName() + primaryNameColumn,
+                                                    columnEntity.getLogicalName(),
                                                     columnEntity.getName(),
-                                                    columnEntity.getDataType(),
-                                                    columnEntity.IsAuditEnabled()?"Enabled":"Disabled",
-                                                    columnEntity.isCustomizable().ToString(),
-                                                    columnEntity.isRequired().ToString(),
-                                                    columnEntity.isSearchable().ToString()
-                                                    ));
+                                                    columnEntity.getDataType()));
                     }
-                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Display Name", "Name", "Data type", "Auditing", "Customizable", "Required", "Searchable"), tableRows));
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Display Name", "Logical Name", "Name", "Data type"), tableRows));
+
+                    foreach (ColumnEntity columnEntity in columns)
+                    {
+                        string primaryNameColumn = columnEntity.getDisplayMask().Contains("PrimaryName") ? " (Primary name column)" : "";
+                        string columnHeading = !String.IsNullOrEmpty(columnEntity.getDisplayName())
+                            ? columnEntity.getDisplayName() + " (" + columnEntity.getLogicalName() + ")"
+                            : columnEntity.getLogicalName();
+                        solutionDoc.Root.Add(new MdHeading(columnHeading + primaryNameColumn, 6));
+                        List<MdTableRow> propRows = new List<MdTableRow>
+                        {
+                            new MdTableRow("Display Name", columnEntity.getDisplayName()),
+                            new MdTableRow("Logical Name", columnEntity.getLogicalName()),
+                            new MdTableRow("Physical Name", columnEntity.getName()),
+                            new MdTableRow("Data Type", columnEntity.getDataType()),
+                            new MdTableRow("Custom Field", columnEntity.IsCustomField()?"Yes":"No"),
+                            new MdTableRow("Auditing", columnEntity.IsAuditEnabled()?"Enabled":"Disabled"),
+                            new MdTableRow("Customizable", columnEntity.isCustomizable().ToString()),
+                            new MdTableRow("Required", columnEntity.isRequired().ToString()),
+                            new MdTableRow("Searchable", columnEntity.isSearchable().ToString()),
+                            new MdTableRow("Secured", columnEntity.IsSecured()?"Yes":"No"),
+                            new MdTableRow("Filterable", columnEntity.IsFilterable()?"Yes":"No")
+                        };
+                        solutionDoc.Root.Add(new MdTable(new MdTableRow("Property", "Value"), propRows));
+                    }
+                    }
+                }
+
+                if (tableEntity.GetForms().Count > 0)
+                {
+                    solutionDoc.Root.Add(new MdHeading("Forms", 5));
+                    List<MdTableRow> formRows = new List<MdTableRow>();
+                    foreach (FormEntity formEntity in tableEntity.GetForms())
+                    {
+                        formRows.Add(new MdTableRow(
+                            formEntity.GetFormName(),
+                            formEntity.GetFormTypeDisplayName(),
+                            formEntity.IsDefault() ? "Yes" : "No",
+                            formEntity.IsActive() ? "Active" : "Inactive",
+                            formEntity.IsCustomizable() ? "Yes" : "No"
+                        ));
+                    }
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Name", "Type", "Default", "State", "Customizable"), formRows));
+
+                    foreach (FormEntity formEntity in tableEntity.GetForms())
+                    {
+                        List<FormTab> tabs = formEntity.GetTabs();
+                        if (tabs.Count > 0)
+                        {
+                            solutionDoc.Root.Add(new MdHeading("Form: " + formEntity.GetFormName(), 6));
+                            foreach (FormTab tab in tabs)
+                            {
+                                solutionDoc.Root.Add(new MdParagraph(new MdStrongEmphasisSpan("Tab: " + tab.GetName() + (tab.IsVisible() ? "" : " (hidden)"))));
+                                foreach (FormSection section in tab.GetSections())
+                                {
+                                    List<FormControl> controls = section.GetControls();
+                                    if (controls.Count > 0)
+                                    {
+                                        solutionDoc.Root.Add(new MdParagraph(new MdTextSpan("Section: " + section.GetName() + (section.IsVisible() ? "" : " (hidden)"))));
+                                        List<MdTableRow> controlRows = new List<MdTableRow>();
+                                        int controlIndex = 1;
+                                        foreach (FormControl control in controls)
+                                        {
+                                            string fieldName = !String.IsNullOrEmpty(control.GetDataFieldName()) ? control.GetDataFieldName() : control.GetId();
+                                            controlRows.Add(new MdTableRow(controlIndex.ToString(), control.GetId(), fieldName));
+                                            controlIndex++;
+                                        }
+                                        solutionDoc.Root.Add(new MdTable(new MdTableRow("#", "Control", "Field"), controlRows));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (tableEntity.GetViews().Count > 0)
+                {
+                    solutionDoc.Root.Add(new MdHeading("Views", 5));
+                    List<MdTableRow> viewRows = new List<MdTableRow>();
+                    foreach (ViewEntity viewEntity in tableEntity.GetViews())
+                    {
+                        viewRows.Add(new MdTableRow(
+                            viewEntity.GetViewName(),
+                            viewEntity.GetQueryTypeDisplayName(),
+                            viewEntity.IsDefault() ? "Yes" : "No",
+                            viewEntity.IsCustomizable() ? "Yes" : "No"
+                        ));
+                    }
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Name", "Type", "Default", "Customizable"), viewRows));
+
+                    Dictionary<string, string> columnDisplayNames = tableEntity.GetColumns().ToDictionary(c => c.getLogicalName(), c => c.getDisplayName(), StringComparer.OrdinalIgnoreCase);
+                    foreach (ViewEntity viewEntity in tableEntity.GetViews())
+                    {
+                        List<ViewColumn> viewColumns = viewEntity.GetColumns();
+                        if (viewColumns.Count > 0)
+                        {
+                            solutionDoc.Root.Add(new MdHeading("View: " + viewEntity.GetViewName(), 6));
+                            List<MdTableRow> colRows = new List<MdTableRow>();
+                            foreach (ViewColumn vc in viewColumns)
+                            {
+                                string colName = vc.GetName();
+                                string displayName = columnDisplayNames.TryGetValue(colName, out string dn) && !String.IsNullOrEmpty(dn) ? dn + " (" + colName + ")" : colName;
+                                colRows.Add(new MdTableRow(vc.Order.ToString(), displayName, vc.GetWidth()));
+                            }
+                            solutionDoc.Root.Add(new MdTable(new MdTableRow("#", "Column", "Width"), colRows));
+                        }
+                    }
                 }
             }
             solutionDoc.Root.Add(new MdHeading("Table Relationships", 4));

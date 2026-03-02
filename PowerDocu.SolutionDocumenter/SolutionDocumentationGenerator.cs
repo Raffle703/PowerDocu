@@ -50,16 +50,16 @@ namespace PowerDocu.SolutionDocumenter
                             if (config.outputFormat.Equals(OutputFormatHelper.Word) || config.outputFormat.Equals(OutputFormatHelper.All))
                             {
                                 NotificationHelper.SendNotification("Creating Solution documentation");
-                                SolutionWordDocBuilder wordzip = new SolutionWordDocBuilder(solutionContent, config.wordTemplate);
+                                SolutionWordDocBuilder wordzip = new SolutionWordDocBuilder(solutionContent, config.wordTemplate, config.documentDefaultColumns, config.addTableOfContents);
                             }
                             if (config.outputFormat.Equals(OutputFormatHelper.Markdown) || config.outputFormat.Equals(OutputFormatHelper.All))
                             {
-                                SolutionMarkdownBuilder mdDoc = new SolutionMarkdownBuilder(solutionContent);
+                                SolutionMarkdownBuilder mdDoc = new SolutionMarkdownBuilder(solutionContent, config.documentDefaultColumns);
                             }
                             if (config.outputFormat.Equals(OutputFormatHelper.Html) || config.outputFormat.Equals(OutputFormatHelper.All))
                             {
                                 NotificationHelper.SendNotification("Creating HTML Solution documentation");
-                                SolutionHtmlBuilder htmlDoc = new SolutionHtmlBuilder(solutionContent);
+                                SolutionHtmlBuilder htmlDoc = new SolutionHtmlBuilder(solutionContent, config.documentDefaultColumns);
                             }
                         }
                     }

@@ -19,7 +19,7 @@ namespace PowerDocu.AppDocumenter
         private bool showDefaults;
         private bool documentSampleData;
 
-        public AppWordDocBuilder(AppDocumentationContent contentDocumentation, string template, bool documentChangedDefaultsOnly = false, bool showDefaults = true, bool documentSampleData = false)
+        public AppWordDocBuilder(AppDocumentationContent contentDocumentation, string template, bool documentChangedDefaultsOnly = false, bool showDefaults = true, bool documentSampleData = false, bool addTableOfContents = false)
         {
             content = contentDocumentation;
             this.documentChangedDefaultsOnly = documentChangedDefaultsOnly;
@@ -33,6 +33,7 @@ namespace PowerDocu.AppDocumenter
                 mainPart = wordDocument.MainDocumentPart;
                 body = mainPart.Document.Body;
                 PrepareDocument(!String.IsNullOrEmpty(template));
+                if (addTableOfContents) AddTableOfContents();
                 addAppProperties();
                 addAppVariablesInfo();
                 addAppDataSources();

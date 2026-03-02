@@ -43,11 +43,11 @@ namespace PowerDocu.FlowDocumenter
                                     NotificationHelper.SendNotification("Creating Word documentation");
                                     if (String.IsNullOrEmpty(config.wordTemplate) || !File.Exists(config.wordTemplate))
                                     {
-                                        FlowWordDocBuilder wordzip = new FlowWordDocBuilder(content, null);
+                                        FlowWordDocBuilder wordzip = new FlowWordDocBuilder(content, null, config.addTableOfContents);
                                     }
                                     else
                                     {
-                                        FlowWordDocBuilder wordzip = new FlowWordDocBuilder(content, config.wordTemplate);
+                                        FlowWordDocBuilder wordzip = new FlowWordDocBuilder(content, config.wordTemplate, config.addTableOfContents);
                                     }
                                 }
                                 if (config.outputFormat.Equals(OutputFormatHelper.Markdown) || config.outputFormat.Equals(OutputFormatHelper.All))

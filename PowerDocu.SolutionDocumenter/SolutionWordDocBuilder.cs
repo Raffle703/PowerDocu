@@ -12,10 +12,12 @@ namespace PowerDocu.SolutionDocumenter
     class SolutionWordDocBuilder : WordDocBuilder
     {
         private readonly SolutionDocumentationContent content;
+        private readonly bool documentDefaultColumns;
 
-        public SolutionWordDocBuilder(SolutionDocumentationContent contentDocumentation, string template)
+        public SolutionWordDocBuilder(SolutionDocumentationContent contentDocumentation, string template, bool documentDefaultColumns = false, bool addTableOfContents = false)
         {
             content = contentDocumentation;
+            this.documentDefaultColumns = documentDefaultColumns;
             Directory.CreateDirectory(content.folderPath);
             string filename = InitializeWordDocument(content.folderPath + "Solution - " + content.filename, template);
             using WordprocessingDocument wordDocument = WordprocessingDocument.Open(filename, true);
@@ -23,6 +25,7 @@ namespace PowerDocu.SolutionDocumenter
             body = mainPart.Document.Body;
             PrepareDocument(!String.IsNullOrEmpty(template));
             addSolutionMetadata();
+            if (addTableOfContents) AddTableOfContents();
             addSolutionComponents();
         }
 
@@ -196,6 +199,9 @@ namespace PowerDocu.SolutionDocumenter
                     case "Entity":
                         renderEntities();
                         break;
+                    case "AI Project":
+                        renderAIModels();
+                        break;
                     case "Option Set":
                         renderOptionSets();
                         break;
@@ -283,32 +289,288 @@ namespace PowerDocu.SolutionDocumenter
                 Table table = CreateTable();
                 table.Append(CreateRow(new Text("Primary Column"), new Text(tableEntity.getPrimaryColumn())));
                 table.Append(CreateRow(new Text("Description"), new Text(tableEntity.getDescription())));
+                table.Append(CreateRow(new Text("Entity Set Name"), new Text(tableEntity.GetEntitySetName())));
                 table.Append(CreateRow(new Text("Record Ownership"), new Text(tableEntity.GetOwnershipType())));
                 table.Append(CreateRow(new Text("Auditing"), new Text(tableEntity.IsAuditEnabled() ? "Enabled" : "Disabled")));
+                table.Append(CreateRow(new Text("Customizable"), new Text(tableEntity.IsCustomizable() ? "Yes" : "No")));
+                table.Append(CreateRow(new Text("Change Tracking"), new Text(tableEntity.IsChangeTrackingEnabled() ? "Enabled" : "Disabled")));
+                table.Append(CreateRow(new Text("Is Activity"), new Text(tableEntity.IsActivity() ? "Yes" : "No")));
+                table.Append(CreateRow(new Text("Quick Create"), new Text(tableEntity.IsQuickCreateEnabled() ? "Enabled" : "Disabled")));
+                table.Append(CreateRow(new Text("Connections"), new Text(tableEntity.IsConnectionsEnabled() ? "Enabled" : "Disabled")));
+                table.Append(CreateRow(new Text("Duplicate Detection"), new Text(tableEntity.IsDuplicateCheckSupported() ? "Enabled" : "Disabled")));
+                table.Append(CreateRow(new Text("Mobile Visible"), new Text(tableEntity.IsVisibleInMobile() ? "Yes" : "No")));
+                table.Append(CreateRow(new Text("Introduced Version"), new Text(tableEntity.GetIntroducedVersion())));
                 body.Append(table);
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
-                table = CreateTable();
-                table.Append(CreateHeaderRow(new Text("Display Name"),
-                                             new Text("Name"),
-                                             new Text("Data type"),
-                                             new Text("Auditing"),
-                                             new Text("Customizable"),
-                                             new Text("Required"),
-                                             new Text("Searchable")));
-                foreach (ColumnEntity columnEntity in tableEntity.GetColumns())
+                if (tableEntity.GetColumns().Count > 0)
                 {
-                    string primaryNameColumn = columnEntity.getDisplayMask().Contains("PrimaryName") ? " (Primary name column)" : "";
-                    table.Append(CreateRow(
-                        new Text(columnEntity.getDisplayName() + primaryNameColumn),
-                        new Text(columnEntity.getName()),
-                        new Text(columnEntity.getDataType()),
-                        new Text(columnEntity.IsAuditEnabled() ? "Enabled" : "Disabled"),
-                        new Text(columnEntity.isCustomizable().ToString()),
-                        new Text(columnEntity.isRequired().ToString()),
-                        new Text(columnEntity.isSearchable().ToString())));
+                    var columns = documentDefaultColumns
+                        ? tableEntity.GetColumns()
+                        : tableEntity.GetColumns().Where(c => !c.isDefaultColumn()).ToList();
+                    if (columns.Count > 0)
+                    {
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run(new Text("Columns")));
+                    ApplyStyleToParagraph("Heading4", para);
+                    table = CreateTable();
+                    table.Append(CreateHeaderRow(new Text("Display Name"),
+                                                 new Text("Logical Name"),
+                                                 new Text("Name"),
+                                                 new Text("Data type")));
+                    foreach (ColumnEntity columnEntity in columns)
+                    {
+                        string primaryNameColumn = columnEntity.getDisplayMask().Contains("PrimaryName") ? " (Primary name column)" : "";
+                        table.Append(CreateRow(
+                            new Text(columnEntity.getDisplayName() + primaryNameColumn),
+                            new Text(columnEntity.getLogicalName()),
+                            new Text(columnEntity.getName()),
+                            new Text(columnEntity.getDataType())));
+                    }
+                    body.Append(table);
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run());
+
+                    foreach (ColumnEntity columnEntity in columns)
+                    {
+                        string primaryNameColumn = columnEntity.getDisplayMask().Contains("PrimaryName") ? " (Primary name column)" : "";
+                        string columnHeading = !String.IsNullOrEmpty(columnEntity.getDisplayName())
+                            ? columnEntity.getDisplayName() + " (" + columnEntity.getLogicalName() + ")"
+                            : columnEntity.getLogicalName();
+                        para = body.AppendChild(new Paragraph());
+                        run = para.AppendChild(new Run(new Text(columnHeading + primaryNameColumn)));
+                        ApplyStyleToParagraph("Heading5", para);
+                        table = CreateTable();
+                        table.Append(CreateRow(new Text("Display Name"), new Text(columnEntity.getDisplayName())));
+                        table.Append(CreateRow(new Text("Logical Name"), new Text(columnEntity.getLogicalName())));
+                        table.Append(CreateRow(new Text("Physical Name"), new Text(columnEntity.getName())));
+                        table.Append(CreateRow(new Text("Data Type"), new Text(columnEntity.getDataType())));
+                        table.Append(CreateRow(new Text("Custom Field"), new Text(columnEntity.IsCustomField() ? "Yes" : "No")));
+                        table.Append(CreateRow(new Text("Auditing"), new Text(columnEntity.IsAuditEnabled() ? "Enabled" : "Disabled")));
+                        table.Append(CreateRow(new Text("Customizable"), new Text(columnEntity.isCustomizable().ToString())));
+                        table.Append(CreateRow(new Text("Required"), new Text(columnEntity.isRequired().ToString())));
+                        table.Append(CreateRow(new Text("Searchable"), new Text(columnEntity.isSearchable().ToString())));
+                        table.Append(CreateRow(new Text("Secured"), new Text(columnEntity.IsSecured() ? "Yes" : "No")));
+                        table.Append(CreateRow(new Text("Filterable"), new Text(columnEntity.IsFilterable() ? "Yes" : "No")));
+                        body.Append(table);
+                        para = body.AppendChild(new Paragraph());
+                        run = para.AppendChild(new Run());
+                    }
+                    }
                 }
-                body.Append(table);
+
+                if (tableEntity.GetForms().Count > 0)
+                {
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run(new Text("Forms")));
+                    ApplyStyleToParagraph("Heading4", para);
+                    table = CreateTable();
+                    table.Append(CreateHeaderRow(new Text("Name"),
+                                                 new Text("Type"),
+                                                 new Text("Default"),
+                                                 new Text("State"),
+                                                 new Text("Customizable")));
+                    foreach (FormEntity formEntity in tableEntity.GetForms())
+                    {
+                        table.Append(CreateRow(
+                            new Text(formEntity.GetFormName()),
+                            new Text(formEntity.GetFormTypeDisplayName()),
+                            new Text(formEntity.IsDefault() ? "Yes" : "No"),
+                            new Text(formEntity.IsActive() ? "Active" : "Inactive"),
+                            new Text(formEntity.IsCustomizable() ? "Yes" : "No")));
+                    }
+                    body.Append(table);
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run());
+
+                    foreach (FormEntity formEntity in tableEntity.GetForms())
+                    {
+                        List<FormTab> tabs = formEntity.GetTabs();
+                        if (tabs.Count > 0)
+                        {
+                            para = body.AppendChild(new Paragraph());
+                            run = para.AppendChild(new Run(new Text("Form: " + formEntity.GetFormName())));
+                            ApplyStyleToParagraph("Heading5", para);
+                            foreach (FormTab tab in tabs)
+                            {
+                                para = body.AppendChild(new Paragraph());
+                                Run boldRun = para.AppendChild(new Run());
+                                boldRun.AppendChild(new RunProperties(new Bold()));
+                                boldRun.AppendChild(new Text("Tab: " + tab.GetName() + (tab.IsVisible() ? "" : " (hidden)")));
+                                foreach (FormSection section in tab.GetSections())
+                                {
+                                    List<FormControl> controls = section.GetControls();
+                                    if (controls.Count > 0)
+                                    {
+                                        para = body.AppendChild(new Paragraph());
+                                        run = para.AppendChild(new Run(new Text("Section: " + section.GetName() + (section.IsVisible() ? "" : " (hidden)"))));
+                                        table = CreateTable();
+                                        table.Append(CreateHeaderRow(new Text("#"), new Text("Control"), new Text("Field")));
+                                        int controlIndex = 1;
+                                        foreach (FormControl control in controls)
+                                        {
+                                            string fieldName = !String.IsNullOrEmpty(control.GetDataFieldName()) ? control.GetDataFieldName() : control.GetId();
+                                            table.Append(CreateRow(new Text(controlIndex.ToString()), new Text(control.GetId()), new Text(fieldName)));
+                                            controlIndex++;
+                                        }
+                                        body.Append(table);
+                                        para = body.AppendChild(new Paragraph());
+                                        run = para.AppendChild(new Run());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (tableEntity.GetViews().Count > 0)
+                {
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run(new Text("Views")));
+                    ApplyStyleToParagraph("Heading4", para);
+                    table = CreateTable();
+                    table.Append(CreateHeaderRow(new Text("Name"),
+                                                 new Text("Type"),
+                                                 new Text("Default"),
+                                                 new Text("Customizable")));
+                    foreach (ViewEntity viewEntity in tableEntity.GetViews())
+                    {
+                        table.Append(CreateRow(
+                            new Text(viewEntity.GetViewName()),
+                            new Text(viewEntity.GetQueryTypeDisplayName()),
+                            new Text(viewEntity.IsDefault() ? "Yes" : "No"),
+                            new Text(viewEntity.IsCustomizable() ? "Yes" : "No")));
+                    }
+                    body.Append(table);
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run());
+
+                    Dictionary<string, string> columnDisplayNames = tableEntity.GetColumns().ToDictionary(c => c.getLogicalName(), c => c.getDisplayName(), StringComparer.OrdinalIgnoreCase);
+                    foreach (ViewEntity viewEntity in tableEntity.GetViews())
+                    {
+                        List<ViewColumn> viewColumns = viewEntity.GetColumns();
+                        if (viewColumns.Count > 0)
+                        {
+                            para = body.AppendChild(new Paragraph());
+                            run = para.AppendChild(new Run(new Text("View: " + viewEntity.GetViewName())));
+                            ApplyStyleToParagraph("Heading5", para);
+                            table = CreateTable();
+                            table.Append(CreateHeaderRow(new Text("#"), new Text("Column"), new Text("Width")));
+                            foreach (ViewColumn vc in viewColumns)
+                            {
+                                string colName = vc.GetName();
+                                string displayName = columnDisplayNames.TryGetValue(colName, out string dn) && !String.IsNullOrEmpty(dn) ? dn + " (" + colName + ")" : colName;
+                                table.Append(CreateRow(new Text(vc.Order.ToString()), new Text(displayName), new Text(vc.GetWidth())));
+                            }
+                            body.Append(table);
+                            para = body.AppendChild(new Paragraph());
+                            run = para.AppendChild(new Run());
+                        }
+                    }
+                }
+            }
+            para = body.AppendChild(new Paragraph());
+            run = para.AppendChild(new Run());
+            run.AppendChild(new Text("Table Relationships"));
+            ApplyStyleToParagraph("Heading3", para);
+            ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
+            int imageWidth, imageHeight;
+            using (FileStream stream = new FileStream(content.folderPath + "dataverse.png", FileMode.Open))
+            {
+                using (var image = Image.FromStream(stream, false, false))
+                {
+                    imageWidth = image.Width;
+                    imageHeight = image.Height;
+                }
+                stream.Position = 0;
+                imagePart.FeedData(stream);
+            }
+            ImagePart svgPart = mainPart.AddNewPart<ImagePart>("image/svg+xml", "rId" + (new Random()).Next(100000, 999999));
+            using (FileStream stream = new FileStream(content.folderPath + "dataverse.svg", FileMode.Open))
+            {
+                svgPart.FeedData(stream);
+            }
+            body.AppendChild(new Paragraph(new Run(
+                InsertSvgImage(mainPart.GetIdOfPart(svgPart), mainPart.GetIdOfPart(imagePart), imageWidth, imageHeight)
+            )));
+            para = body.AppendChild(new Paragraph());
+            run = para.AppendChild(new Run());
+        }
+
+        private void renderAIModels()
+        {
+            Paragraph para = body.AppendChild(new Paragraph());
+            Run run = para.AppendChild(new Run());
+            run.AppendChild(new Text("AI Models"));
+            ApplyStyleToParagraph("Heading2", para);
+            foreach (AIModel aiModel in content.solution.Customizations.getAIModels().OrderBy(o => o.getName()))
+            {
+                para = body.AppendChild(new Paragraph());
+                run = para.AppendChild(new Run(new Text(aiModel.getName())));
+                ApplyStyleToParagraph("Heading3", para);
+                para = body.AppendChild(new Paragraph());
+                run = para.AppendChild(new Run(new Text("Model")));
+                ApplyStyleToParagraph("Heading4", para);
+                para = body.AppendChild(new Paragraph());
+                run = para.AppendChild(new Run(new Text("TODO Model details")));
+                para = body.AppendChild(new Paragraph());
+                run = para.AppendChild(new Run(new Text("Instructions")));
+                ApplyStyleToParagraph("Heading4", para);
+                Table instructionsTable = CreateTable();
+                Paragraph paraTable = new Paragraph();
+                Run tableRun = paraTable.AppendChild(new Run());
+                string prompt = aiModel.getPrompt();
+                string[] promptLines = prompt.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                foreach (string promptLine in promptLines)
+                {
+                    tableRun.AppendChild(new Text(promptLine));
+                    tableRun.AppendChild(new Break());
+                }
+                instructionsTable.Append(CreateRow(paraTable));
+                body.Append(instructionsTable);
+
+                // Create table for inputs instead of individual text lines
+                List<AIModelInput> inputs = aiModel.getInputs().OrderBy(i => i.Text).ToList();
+                if (inputs.Count > 0)
+                {
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run(new Text("Inputs")));
+                    ApplyStyleToParagraph("Heading4", para);
+                    Table inputsTable = CreateTable();
+                    inputsTable.Append(CreateHeaderRow(
+                        new Text("Name"),
+                        new Text("ID"),
+                        new Text("Type"),
+                        new Text("Quick Text Value")
+                    ));
+
+                    foreach (AIModelInput input in inputs)
+                    {
+                        inputsTable.Append(CreateRow(
+                            new Text(input.Text ?? ""),
+                            new Text(input.Id ?? ""),
+                            new Text(input.Type ?? ""),
+                            new Text(input.QuickTextValue ?? "")
+                        ));
+                    }
+                    body.Append(inputsTable);
+                }
+
+                AIModelOutput output = aiModel.getOutput();
+                if (output != null)
+                {
+                    para = body.AppendChild(new Paragraph());
+                    run = para.AppendChild(new Run(new Text("Model response")));
+                    ApplyStyleToParagraph("Heading4", para); ;
+                    Table outputTable = CreateTable();
+                    outputTable.Append(CreateRow(new Text("Output Formats"), new Text(string.Join(", ", output.Formats))));
+                    if (!String.IsNullOrEmpty(output.jsonSchema))
+                    {
+                        outputTable.Append(CreateRow(new Text("Schema"), CreateRunWithLinebreaks(JsonUtil.JsonPrettify(output.jsonSchema)))); //todo
+                        outputTable.Append(CreateRow(new Text("Examples"), CreateRunWithLinebreaks(JsonUtil.JsonPrettify(output.jsonExamples)))); //todo
+                    }
+                    body.Append(outputTable);
+                }
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
             }

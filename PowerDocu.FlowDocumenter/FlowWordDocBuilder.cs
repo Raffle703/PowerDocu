@@ -14,7 +14,7 @@ namespace PowerDocu.FlowDocumenter
     {
         private readonly FlowDocumentationContent content;
 
-        public FlowWordDocBuilder(FlowDocumentationContent contentDocumentation, string template)
+        public FlowWordDocBuilder(FlowDocumentationContent contentDocumentation, string template, bool addTableOfContents = false)
         {
             this.content = contentDocumentation;
             Directory.CreateDirectory(content.folderPath);
@@ -24,6 +24,7 @@ namespace PowerDocu.FlowDocumenter
                 mainPart = wordDocument.MainDocumentPart;
                 body = mainPart.Document.Body;
                 PrepareDocument(!String.IsNullOrEmpty(template));
+                if (addTableOfContents) AddTableOfContents();
                 //add all the relevant content
                 addFlowMetadata();
                 addFlowOverview(wordDocument);

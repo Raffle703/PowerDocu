@@ -37,9 +37,9 @@ namespace PowerDocu.GUI
             documentDefaultsCheckBox.Checked = configHelper.documentDefaultValuesCanvasApps;
             documentSampleDataCheckBox.Checked = configHelper.documentSampleData;
             flowActionSortOrderComboBox.SelectedItem = configHelper.flowActionSortOrder;
-
-            // Load newly added settings
             solutionCheckBox.Checked = configHelper.documentSolution;
+            documentDefaultColumnsCheckBox.Checked = configHelper.documentDefaultColumns;
+            agentsCheckBox.Checked = configHelper.documentAgents;
             flowsCheckBox.Checked = configHelper.documentFlows;
             appsCheckBox.Checked = configHelper.documentApps;
             appPropertiesCheckBox.Checked = configHelper.documentAppProperties;
@@ -47,6 +47,7 @@ namespace PowerDocu.GUI
             dataSourcesCheckBox.Checked = configHelper.documentAppDataSources;
             resourcesCheckBox.Checked = configHelper.documentAppResources;
             controlsCheckBox.Checked = configHelper.documentAppControls;
+            addTableOfContentsCheckBox.Checked = configHelper.addTableOfContents;
             checkForUpdatesOnLaunchCheckBox.Checked = configHelper.checkForUpdatesOnLaunch;
 
             // Load Word template if available
@@ -54,7 +55,7 @@ namespace PowerDocu.GUI
             {
                 openWordTemplateDialog.FileName = configHelper.wordTemplate;
                 wordTemplateInfoLabel.Text =
-                    "Template: " + Path.GetFileName(configHelper.wordTemplate);
+                    "Word Template: " + Path.GetFileName(configHelper.wordTemplate);
             }
         }
 
@@ -124,7 +125,7 @@ namespace PowerDocu.GUI
                 {
                     clearWordTemplateButton.Visible = true;
                     wordTemplateInfoLabel.Text =
-                        "Template: " + Path.GetFileName(openWordTemplateDialog.FileName);
+                        "Word Template: " + Path.GetFileName(openWordTemplateDialog.FileName);
                     NotificationHelper.SendNotification(
                         "Selected Word template " + openWordTemplateDialog.FileName
                     );
@@ -180,6 +181,8 @@ namespace PowerDocu.GUI
             configHelper.flowActionSortOrder = flowActionSortOrderComboBox.SelectedItem.ToString();
             configHelper.wordTemplate = openWordTemplateDialog.FileName;
             configHelper.documentSolution = solutionCheckBox.Checked;
+            configHelper.documentDefaultColumns = documentDefaultColumnsCheckBox.Checked;
+            configHelper.documentAgents = agentsCheckBox.Checked;
             configHelper.documentFlows = flowsCheckBox.Checked;
             configHelper.documentApps = appsCheckBox.Checked;
             configHelper.documentAppProperties = appPropertiesCheckBox.Checked;
@@ -187,6 +190,7 @@ namespace PowerDocu.GUI
             configHelper.documentAppDataSources = dataSourcesCheckBox.Checked;
             configHelper.documentAppResources = resourcesCheckBox.Checked;
             configHelper.documentAppControls = controlsCheckBox.Checked;
+            configHelper.addTableOfContents = addTableOfContentsCheckBox.Checked;
             configHelper.checkForUpdatesOnLaunch = checkForUpdatesOnLaunchCheckBox.Checked;
         }
 

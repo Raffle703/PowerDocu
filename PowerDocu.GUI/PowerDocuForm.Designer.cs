@@ -114,8 +114,8 @@ namespace PowerDocu.GUI
             };
             settingsPanel = new Panel()
             {
-                Location = new Point(0, 0),
-                Size = new Size(convertToDPISpecific(450), convertToDPISpecific(600))
+                Dock = DockStyle.Fill,
+                AutoScroll = true
             };
 
 
@@ -196,34 +196,64 @@ namespace PowerDocu.GUI
             };
             clearWordTemplateButton.Click += new EventHandler(ClearWordTemplateButton_Click);
             outputFormatGroup.Controls.Add(clearWordTemplateButton);
+            addTableOfContentsCheckBox = new CheckBox()
+            {
+                Location = new Point(convertToDPISpecific(15), clearWordTemplateButton.Location.Y + clearWordTemplateButton.Height + convertToDPISpecific(5)),
+                Text = "Add Table of Contents (Word)",
+                Width = convertToDPISpecific(250),
+                Checked = false
+            };
+            outputFormatGroup.Controls.Add(addTableOfContentsCheckBox);
             documentationOptionsGroup = new GroupBox()
             {
                 Text = "Documentation Options",
                 Padding = new Padding(10),
-                Location = new Point(convertToDPISpecific(15), outputFormatGroup.Height + outputFormatGroup.Location.Y + convertToDPISpecific(10)),
-                Size = new System.Drawing.Size(convertToDPISpecific(400), convertToDPISpecific(145)),
-                AutoSize = true
+                Location = new Point(outputFormatGroup.Location.X + outputFormatGroup.Width + convertToDPISpecific(15), convertToDPISpecific(15)),
+                Size = new System.Drawing.Size(convertToDPISpecific(450), convertToDPISpecific(145)),
+                AutoSize = false
             };
             settingsPanel.Controls.Add(documentationOptionsGroup);
+
+            // Inner panel to make Documentation Options scrollable
+            Panel docOptionsInnerPanel = new Panel()
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true
+            };
+            docOptionsInnerPanel.HorizontalScroll.Enabled = false;
+            docOptionsInnerPanel.HorizontalScroll.Visible = false;
+            docOptionsInnerPanel.HorizontalScroll.Maximum = 0;
+            documentationOptionsGroup.Controls.Add(docOptionsInnerPanel);
             // Solutions Checkbox
             solutionCheckBox = new CheckBox()
             {
                 Text = "Solution",
-                Location = new Point(convertToDPISpecific(15), convertToDPISpecific(25)),
+                Location = new Point(convertToDPISpecific(15), convertToDPISpecific(5)),
                 Checked = true,
                 AutoSize = true
             };
-            documentationOptionsGroup.Controls.Add(solutionCheckBox);
+            docOptionsInnerPanel.Controls.Add(solutionCheckBox);
+
+            // Solution: Document Default Columns Checkbox
+            documentDefaultColumnsCheckBox = new CheckBox()
+            {
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "Solution: Document default columns",
+                Checked = false,
+                Size = new Size(convertToDPISpecific(300), convertToDPISpecific(30)),
+                Location = new Point(convertToDPISpecific(30), solutionCheckBox.Location.Y + solutionCheckBox.Height + convertToDPISpecific(5))
+            };
+            docOptionsInnerPanel.Controls.Add(documentDefaultColumnsCheckBox);
 
             // Flows Checkbox
             flowsCheckBox = new CheckBox()
             {
                 Text = "Flows",
-                Location = new Point(convertToDPISpecific(15), solutionCheckBox.Location.Y + solutionCheckBox.Height + convertToDPISpecific(10)),
+                Location = new Point(convertToDPISpecific(15), documentDefaultColumnsCheckBox.Location.Y + documentDefaultColumnsCheckBox.Height + convertToDPISpecific(10)),
                 Checked = true,
                 AutoSize = true
             };
-            documentationOptionsGroup.Controls.Add(flowsCheckBox);
+            docOptionsInnerPanel.Controls.Add(flowsCheckBox);
 
             // Flows: Sort Flow Actions Label
             flowActionSortOrderInfoLabel = new Label()
@@ -233,7 +263,7 @@ namespace PowerDocu.GUI
                 Width = convertToDPISpecific(150),
                 Height = convertToDPISpecific(30)
             };
-            documentationOptionsGroup.Controls.Add(flowActionSortOrderInfoLabel);
+            docOptionsInnerPanel.Controls.Add(flowActionSortOrderInfoLabel);
 
             // Flows: Sort Flow Actions ComboBox
             flowActionSortOrderComboBox = new ComboBox()
@@ -244,17 +274,28 @@ namespace PowerDocu.GUI
             };
             flowActionSortOrderComboBox.Items.AddRange(new object[] { "By name", "By order of appearance" });
             flowActionSortOrderComboBox.SelectedIndex = 0;
-            documentationOptionsGroup.Controls.Add(flowActionSortOrderComboBox);
+            docOptionsInnerPanel.Controls.Add(flowActionSortOrderComboBox);
+
+            // Agents Checkbox
+            agentsCheckBox = new CheckBox()
+            {
+                Text = "Agents",
+                Location = new Point(convertToDPISpecific(15), flowActionSortOrderComboBox.Location.Y + flowActionSortOrderComboBox.Height + convertToDPISpecific(10)),
+                Checked = true,
+                AutoSize = true,
+                Enabled = false // Disable Agents option until documentation for Agents is implemented
+            };
+            docOptionsInnerPanel.Controls.Add(agentsCheckBox);
 
             // Apps Checkbox
             appsCheckBox = new CheckBox()
             {
                 Text = "Apps",
-                Location = new Point(convertToDPISpecific(15), flowActionSortOrderComboBox.Location.Y + flowActionSortOrderComboBox.Height + convertToDPISpecific(10)),
+                Location = new Point(convertToDPISpecific(15), agentsCheckBox.Location.Y + agentsCheckBox.Height + convertToDPISpecific(10)),
                 Checked = true,
                 AutoSize = true
             };
-            documentationOptionsGroup.Controls.Add(appsCheckBox);
+            docOptionsInnerPanel.Controls.Add(appsCheckBox);
 
             // Canvas Apps: Document Changed Properties or All Properties Label
             documentChangesOrEverythingLabel = new Label()
@@ -264,7 +305,7 @@ namespace PowerDocu.GUI
                 Width = convertToDPISpecific(350),
                 Height = convertToDPISpecific(20)
             };
-            documentationOptionsGroup.Controls.Add(documentChangesOrEverythingLabel);
+            docOptionsInnerPanel.Controls.Add(documentChangesOrEverythingLabel);
 
             // Canvas Apps: Changes Only RadioButton
             documentChangesOnlyRadioButton = new RadioButton()
@@ -275,7 +316,7 @@ namespace PowerDocu.GUI
                 Size = new Size(convertToDPISpecific(300), convertToDPISpecific(30)),
                 Location = new Point(convertToDPISpecific(45), documentChangesOrEverythingLabel.Location.Y + documentChangesOrEverythingLabel.Height)
             };
-            documentationOptionsGroup.Controls.Add(documentChangesOnlyRadioButton);
+            docOptionsInnerPanel.Controls.Add(documentChangesOnlyRadioButton);
 
             // Canvas Apps: All Properties RadioButton
             documentEverythingRadioButton = new RadioButton()
@@ -285,7 +326,7 @@ namespace PowerDocu.GUI
                 Size = new Size(convertToDPISpecific(300), convertToDPISpecific(30)),
                 Location = new Point(convertToDPISpecific(45), documentChangesOnlyRadioButton.Location.Y + documentChangesOnlyRadioButton.Height)
             };
-            documentationOptionsGroup.Controls.Add(documentEverythingRadioButton);
+            docOptionsInnerPanel.Controls.Add(documentEverythingRadioButton);
 
             // Canvas Apps: Document Default Values Checkbox
             documentDefaultsCheckBox = new CheckBox()
@@ -296,7 +337,7 @@ namespace PowerDocu.GUI
                 Size = new Size(convertToDPISpecific(350), convertToDPISpecific(30)),
                 Location = new Point(convertToDPISpecific(45), documentEverythingRadioButton.Location.Y + documentEverythingRadioButton.Height)
             };
-            documentationOptionsGroup.Controls.Add(documentDefaultsCheckBox);
+            docOptionsInnerPanel.Controls.Add(documentDefaultsCheckBox);
 
             // Canvas Apps: Document Sample DataSources Checkbox
             documentSampleDataCheckBox = new CheckBox()
@@ -307,7 +348,7 @@ namespace PowerDocu.GUI
                 Size = new Size(convertToDPISpecific(300), convertToDPISpecific(30)),
                 Location = new Point(convertToDPISpecific(45), documentDefaultsCheckBox.Location.Y + documentDefaultsCheckBox.Height)
             };
-            documentationOptionsGroup.Controls.Add(documentSampleDataCheckBox);
+            docOptionsInnerPanel.Controls.Add(documentSampleDataCheckBox);
 
             // Apps Options GroupBox
             GroupBox appsSubOptionsGroup = new GroupBox()
@@ -318,7 +359,7 @@ namespace PowerDocu.GUI
                 Size = new Size(convertToDPISpecific(350), convertToDPISpecific(150)),
                 AutoSize = true
             };
-            documentationOptionsGroup.Controls.Add(appsSubOptionsGroup);
+            docOptionsInnerPanel.Controls.Add(appsSubOptionsGroup);
 
             // Apps Options: Properties Checkbox
             appPropertiesCheckBox = new CheckBox()
@@ -371,6 +412,11 @@ namespace PowerDocu.GUI
             appsSubOptionsGroup.Controls.Add(controlsCheckBox);
 
             // Event handlers for enabling/disabling controls
+            solutionCheckBox.CheckedChanged += (sender, e) =>
+            {
+                documentDefaultColumnsCheckBox.Enabled = solutionCheckBox.Checked;
+            };
+
             flowsCheckBox.CheckedChanged += (sender, e) =>
             {
                 flowActionSortOrderInfoLabel.Enabled = flowsCheckBox.Checked;
@@ -396,7 +442,7 @@ namespace PowerDocu.GUI
             {
                 Text = "Other Options",
                 Padding = new Padding(10),
-                Location = new Point(convertToDPISpecific(15), documentationOptionsGroup.Height + documentationOptionsGroup.Location.Y + convertToDPISpecific(10)),
+                Location = new Point(convertToDPISpecific(15), outputFormatGroup.Height + outputFormatGroup.Location.Y + convertToDPISpecific(10)),
                 Size = new System.Drawing.Size(convertToDPISpecific(400), convertToDPISpecific(120)),
                 AutoSize = true
             };
@@ -475,10 +521,21 @@ namespace PowerDocu.GUI
                 Visible = false
             };
             otherOptionsGroup.Controls.Add(newReleaseLabel);
-            documentationOptionsGroup.Height = newReleaseButton.Location.Y + newReleaseButton.Height + convertToDPISpecific(20);
 
             // Adjust the height of the settingsPanel if necessary
             settingsPanel.Height = otherOptionsGroup.Location.Y + otherOptionsGroup.Height + convertToDPISpecific(20);
+
+            // Make documentationOptionsGroup resize with the tab
+            settingsPanel.Resize += (sender, e) =>
+            {
+                int availableHeight = settingsPanel.ClientSize.Height - documentationOptionsGroup.Location.Y - convertToDPISpecific(15);
+                if (availableHeight > convertToDPISpecific(145))
+                {
+                    documentationOptionsGroup.AutoSize = false;
+                    documentationOptionsGroup.Height = availableHeight;
+                }
+            };
+
             return tabPage;
         }
 
@@ -636,7 +693,7 @@ namespace PowerDocu.GUI
         private TextBox appStatusTextBox;
         private ComboBox outputFormatComboBox, flowActionSortOrderComboBox;
         private GroupBox outputFormatGroup, documentationOptionsGroup, otherOptionsGroup;
-        private CheckBox documentDefaultsCheckBox, documentSampleDataCheckBox, appPropertiesCheckBox, variablesCheckBox, dataSourcesCheckBox, resourcesCheckBox, controlsCheckBox, appsCheckBox, flowsCheckBox, solutionCheckBox, checkForUpdatesOnLaunchCheckBox;
+        private CheckBox documentDefaultsCheckBox, documentSampleDataCheckBox, documentDefaultColumnsCheckBox, appPropertiesCheckBox, variablesCheckBox, dataSourcesCheckBox, resourcesCheckBox, controlsCheckBox, appsCheckBox, agentsCheckBox, flowsCheckBox, solutionCheckBox, checkForUpdatesOnLaunchCheckBox, addTableOfContentsCheckBox;
         private RadioButton documentChangesOnlyRadioButton, documentEverythingRadioButton;
         private Label wordTemplateInfoLabel, fileToParseInfoLabel, outputFormatInfoLabel,
                         flowActionSortOrderInfoLabel, newReleaseLabel, updateConnectorIconsLabel,

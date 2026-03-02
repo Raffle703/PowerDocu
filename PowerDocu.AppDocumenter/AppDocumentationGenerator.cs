@@ -112,11 +112,11 @@ namespace PowerDocu.AppDocumenter
                                 NotificationHelper.SendNotification("Creating Word documentation");
                                 if (String.IsNullOrEmpty(config.wordTemplate) || !File.Exists(config.wordTemplate))
                                 {
-                                    AppWordDocBuilder wordzip = new AppWordDocBuilder(content, null, config.documentDefaultValuesCanvasApps, config.documentDefaultValuesCanvasApps, config.documentSampleData);
+                                    AppWordDocBuilder wordzip = new AppWordDocBuilder(content, null, config.documentDefaultValuesCanvasApps, config.documentDefaultValuesCanvasApps, config.documentSampleData, config.addTableOfContents);
                                 }
                                 else
                                 {
-                                    AppWordDocBuilder wordzip = new AppWordDocBuilder(content, config.wordTemplate, config.documentChangesOnlyCanvasApps, config.documentDefaultValuesCanvasApps, config.documentSampleData);
+                                    AppWordDocBuilder wordzip = new AppWordDocBuilder(content, config.wordTemplate, config.documentChangesOnlyCanvasApps, config.documentDefaultValuesCanvasApps, config.documentSampleData, config.addTableOfContents);
                                 }
                             }
                             if (config.outputFormat.Equals(OutputFormatHelper.Markdown) || config.outputFormat.Equals(OutputFormatHelper.All))

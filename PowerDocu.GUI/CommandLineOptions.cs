@@ -46,6 +46,10 @@ namespace PowerDocu.GUI
         public bool DocumentAppResources { get; set; }
         [Option('g', "documentAppControls", HelpText = "Document app controls", Required = false, Default = true)]
         public bool DocumentAppControls { get; set; }
+        [Option('j', "documentDefaultColumns", HelpText = "Document default Dataverse table columns", Required = false, Default = false)]
+        public bool DocumentDefaultColumns { get; set; }
+        [Option('n', "addTableOfContents", HelpText = "Add a Table of Contents to generated Word documents", Required = false, Default = false)]
+        public bool AddTableOfContents { get; set; }
 
         internal string FileFormat => this switch
         {

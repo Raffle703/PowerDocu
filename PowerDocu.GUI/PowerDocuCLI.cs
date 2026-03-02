@@ -89,6 +89,8 @@ namespace PowerDocu.GUI
                 configHelper.documentAppDataSources = options.DocumentAppDataSources;
                 configHelper.documentAppResources = options.DocumentAppResources;
                 configHelper.documentAppControls = options.DocumentAppControls;
+                configHelper.documentDefaultColumns = options.DocumentDefaultColumns;
+                configHelper.addTableOfContents = options.AddTableOfContents;
                 switch (Path.GetExtension(itemToDocument))
                 {
                     case ".zip":

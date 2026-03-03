@@ -51,6 +51,49 @@ namespace PowerDocu.SolutionDocumenter
         private const string DisabledBorderColor = "#c8c6c4";
         private const string HiddenControlBgColor = "#faf9f8";
 
+        // Cache to avoid regenerating the same SVG when multiple output formats are produced
+        private static readonly Dictionary<FormEntity, FormSvgResult> _svgCache = new Dictionary<FormEntity, FormSvgResult>();
+        private static readonly HashSet<string> _writtenFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Holds pre-computed SVG content and dimensions for a form.
+        /// </summary>
+        public class FormSvgResult
+        {
+            public string SvgContent { get; }
+            public int Width { get; }
+            public int Height { get; }
+
+            public FormSvgResult(string svgContent, int width, int height)
+            {
+                SvgContent = svgContent;
+                Width = width;
+                Height = height;
+            }
+        }
+
+        /// <summary>
+        /// Clears the internal SVG cache. Call after all output formats have been generated to free memory.
+        /// </summary>
+        public static void ClearCache()
+        {
+            _svgCache.Clear();
+            _writtenFiles.Clear();
+        }
+
+        /// <summary>
+        /// Returns the cached SVG result for a form, or builds and caches it on first access.
+        /// </summary>
+        private static FormSvgResult GetOrBuild(FormEntity form, string tableDisplayName, Dictionary<string, string> columnDisplayNames)
+        {
+            if (_svgCache.TryGetValue(form, out FormSvgResult cached))
+                return cached;
+
+            var result = BuildFormSvg(form, tableDisplayName, columnDisplayNames);
+            _svgCache[form] = result;
+            return result;
+        }
+
         /// <summary>
         /// Generates SVG files for all forms in the given table entity.
         /// Returns a dictionary mapping form name to the SVG filename (relative to folderPath).
@@ -72,8 +115,12 @@ namespace PowerDocu.SolutionDocumenter
                     tableEntity.getName() + "-form-" + formTypeLabel + "-" + form.GetFormName())
                     .Replace(" ", "-");
                 string filename = safeName + ".svg";
-                string svg = BuildFormSvg(form, tableEntity.getLocalizedName(), columnDisplayNames);
-                File.WriteAllText(Path.Combine(dataversePath, filename), svg, Encoding.UTF8);
+                FormSvgResult svgResult = GetOrBuild(form, tableEntity.getLocalizedName(), columnDisplayNames);
+                string fullPath = Path.Combine(dataversePath, filename);
+                if (_writtenFiles.Add(fullPath))
+                {
+                    File.WriteAllText(fullPath, svgResult.SvgContent, Encoding.UTF8);
+                }
                 string formKey = form.GetFormName() + "|" + formTypeLabel;
                 result[formKey] = "Dataverse/" + filename;
             }
@@ -89,10 +136,10 @@ namespace PowerDocu.SolutionDocumenter
         {
             List<FormTab> tabs = form.GetTabs();
             if (tabs.Count == 0) return "";
-            return BuildFormSvg(form, tableDisplayName, columnDisplayNames);
+            return GetOrBuild(form, tableDisplayName, columnDisplayNames).SvgContent;
         }
 
-        private static string BuildFormSvg(FormEntity form, string tableDisplayName, Dictionary<string, string> columnDisplayNames)
+        private static FormSvgResult BuildFormSvg(FormEntity form, string tableDisplayName, Dictionary<string, string> columnDisplayNames)
         {
             List<FormTab> tabs = form.GetTabs();
             var sb = new StringBuilder();
@@ -147,7 +194,7 @@ namespace PowerDocu.SolutionDocumenter
             }
 
             sb.AppendLine("</svg>");
-            return sb.ToString();
+            return new FormSvgResult(sb.ToString(), totalWidth, totalHeight);
         }
 
         private static void RenderTabBlock(StringBuilder sb, List<FormTab> allTabs, int activeTabIndex,
@@ -363,6 +410,10 @@ namespace PowerDocu.SolutionDocumenter
         /// </summary>
         public static (int width, int height) MeasureFormSvg(FormEntity form)
         {
+            // Use cached dimensions if available (avoids redundant measurement pass)
+            if (_svgCache.TryGetValue(form, out FormSvgResult cached))
+                return (cached.Width, cached.Height);
+
             List<FormTab> tabs = form.GetTabs();
             if (tabs.Count == 0) return (0, 0);
 

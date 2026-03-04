@@ -135,7 +135,7 @@ namespace PowerDocu.AppDocumenter
                     }
                 }
             }
-            tableRows.Add(new MdTableRow(content.appProperties.headerDocumentationGenerated, DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToShortTimeString()));
+            tableRows.Add(new MdTableRow(content.appProperties.headerDocumentationGenerated, PowerDocuReleaseHelper.GetTimestampWithVersion()));
             metadataTable = new MdTable(new MdTableRow(new List<string>() { "Property", "Value" }), tableRows);
             // prepare the common sections for all documents
             foreach (MdDocument doc in set.Documents)

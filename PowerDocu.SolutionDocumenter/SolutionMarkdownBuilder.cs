@@ -34,6 +34,7 @@ namespace PowerDocu.SolutionDocumenter
             solutionDoc.Root.Add(new MdHeading(content.solution.UniqueName, 1));
             tableRows.Add(new MdTableRow("Status", content.solution.isManaged ? "Managed" : "Unmanaged"));
             tableRows.Add(new MdTableRow("Version", content.solution.Version));
+            tableRows.Add(new MdTableRow("Documentation generated at", PowerDocuReleaseHelper.GetTimestampWithVersion()));
             solutionDoc.Root.Add(new MdTable(new MdTableRow("Property", "Details"), tableRows));
             AddPublisherInfo();
             AddStatistics();

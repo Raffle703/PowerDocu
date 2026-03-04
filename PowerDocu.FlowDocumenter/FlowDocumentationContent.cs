@@ -61,7 +61,7 @@ namespace PowerDocu.FlowDocumenter
             {
                 metadataTable.Add("Description", flow.Description);
             }
-            metadataTable.Add("Documentation generated at", DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToShortTimeString());
+            metadataTable.Add("Documentation generated at", PowerDocuReleaseHelper.GetTimestampWithVersion());
             metadataTable.Add("Number of Variables", "" + flow.actions.ActionNodes.Count(o => o.Type == "InitializeVariable"));
             metadataTable.Add("Number of Actions", "" + flow.actions.ActionNodes.Count);
         }

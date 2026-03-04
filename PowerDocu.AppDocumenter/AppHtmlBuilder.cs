@@ -27,6 +27,7 @@ namespace PowerDocu.AppDocumenter
             this.showDefaults = showDefaults;
             this.documentSampleData = documentSampleData;
             Directory.CreateDirectory(content.folderPath);
+            Directory.CreateDirectory(Path.Combine(content.folderPath, "resources"));
             WriteDefaultStylesheet(content.folderPath);
 
             mainFileName = ("index-" + content.filename + ".html").Replace(" ", "-");
@@ -81,7 +82,6 @@ namespace PowerDocu.AppDocumenter
             {
                 if (content.ResourceStreams.TryGetValue(content.appProperties.appLogo, out MemoryStream resourceStream))
                 {
-                    Directory.CreateDirectory(content.folderPath + "resources");
                     Bitmap appLogo;
                     if (!String.IsNullOrEmpty(content.appProperties.appBackgroundColour))
                     {
@@ -116,7 +116,7 @@ namespace PowerDocu.AppDocumenter
                     }
                 }
             }
-            sb.Append(TableRow(content.appProperties.headerDocumentationGenerated, DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToShortTimeString()));
+            sb.Append(TableRow(content.appProperties.headerDocumentationGenerated, PowerDocuReleaseHelper.GetTimestampWithVersion()));
             sb.Append(TableEnd());
             return sb.ToString();
         }
@@ -315,7 +315,6 @@ namespace PowerDocu.AppDocumenter
 
         private void addAppResources()
         {
-            Directory.CreateDirectory(content.folderPath + "resources");
             StringBuilder body = new StringBuilder();
             body.AppendLine(Heading(1, content.appProperties.header));
             body.AppendLine(buildMetadataTable());

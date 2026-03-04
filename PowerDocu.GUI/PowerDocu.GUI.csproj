@@ -26,11 +26,10 @@
     <PackageProjectUrl>https://github.com/modery/PowerDocu</PackageProjectUrl>
     <RepositoryUrl>https://github.com/modery/PowerDocu</RepositoryUrl>    
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <LangVersion>latest</LangVersion>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Icons\PowerDocu.ico</ApplicationIcon>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishSingleFile>true</PublishSingleFile>
     <DebugType>embedded</DebugType>
     <AssemblyName>PowerDocu</AssemblyName>

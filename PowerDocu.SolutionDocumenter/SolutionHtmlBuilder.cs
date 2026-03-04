@@ -124,6 +124,7 @@ namespace PowerDocu.SolutionDocumenter
             body.Append(TableStart("Property", "Details"));
             body.Append(TableRow("Status", content.solution.isManaged ? "Managed" : "Unmanaged"));
             body.Append(TableRow("Version", content.solution.Version));
+            body.Append(TableRow("Documentation generated at", PowerDocuReleaseHelper.GetTimestampWithVersion()));
             body.AppendLine(TableEnd());
             AddPublisherInfo(body);
             AddStatistics(body);
@@ -503,10 +504,12 @@ namespace PowerDocu.SolutionDocumenter
                         List<FormTab> tabs = formEntity.GetTabs();
                         if (tabs.Count > 0)
                         {
-                            body.AppendLine(Heading(6, "Form: " + formEntity.GetFormName()));
+                            string formTypeLabel = formEntity.GetFormTypeDisplayName();
+                            body.AppendLine(Heading(6, "Form (" + formTypeLabel + "): " + formEntity.GetFormName()));
 
                             // SVG wireframe mockup as external file reference
-                            if (formSvgFiles.TryGetValue(formEntity.GetFormName(), out string svgFile))
+                            string formKey = formEntity.GetFormName() + "|" + formTypeLabel;
+                            if (formSvgFiles.TryGetValue(formKey, out string svgFile))
                             {
                                 body.AppendLine("<div class=\"form-svg-mockup\" style=\"margin: 12px 0; overflow-x: auto;\">");
                                 body.AppendLine($"<img src=\"{Encode(svgFile)}\" alt=\"{Encode("Form layout: " + formEntity.GetFormName())}\" style=\"max-width: 100%;\" />");
@@ -569,6 +572,25 @@ namespace PowerDocu.SolutionDocumenter
                                 body.Append(TableRow(vc.Order.ToString(), displayName, vc.GetWidth()));
                             }
                             body.AppendLine(TableEnd());
+
+                            // View controls table (sort orders, filters)
+                            List<ViewSortOrder> sortOrders = viewEntity.GetSortOrders();
+                            ViewFilter filter = viewEntity.GetFilter();
+                            string filterText = filter?.ToDisplayString(columnDisplayNames) ?? "";
+                            if (sortOrders.Count > 0 || !string.IsNullOrEmpty(filterText))
+                            {
+                                body.Append(TableStart("View Controls", "Details"));
+                                if (sortOrders.Count > 0)
+                                {
+                                    string sortText = string.Join(", ", sortOrders.Select(s => s.ToDisplayString(columnDisplayNames)));
+                                    body.Append(TableRow("Sort by", sortText));
+                                }
+                                if (!string.IsNullOrEmpty(filterText))
+                                {
+                                    body.Append(TableRow("Filter", filterText));
+                                }
+                                body.AppendLine(TableEnd());
+                            }
                         }
                     }
                 }

@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/PowerDocu.GUI/bin/Debug/net8.0-windows/win-x64/PowerDocu.exe",
+            "program": "${workspaceFolder}/PowerDocu.GUI/bin/Debug/net10.0-windows/PowerDocu.exe",
             "args": [],
-            "cwd": "${workspaceFolder}/PowerDocu.GUI/bin/Debug/net8.0-windows/win-x64",
+            "cwd": "${workspaceFolder}/PowerDocu.GUI/bin/Debug/net10.0-windows",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false

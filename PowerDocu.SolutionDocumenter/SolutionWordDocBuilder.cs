@@ -41,6 +41,7 @@ namespace PowerDocu.SolutionDocumenter
             table.Append(CreateRow(new Text("Status"), new Text(content.solution.isManaged ? "Managed" : "Unmanaged")));
             table.Append(CreateRow(new Text("Version"), new Text(content.solution.Version)));
             table.Append(CreateRow(new Text("Publisher"), GetPublisherInfo()));
+            table.Append(CreateRow(new Text("Documentation generated at"), new Text(PowerDocuReleaseHelper.GetTimestampWithVersion())));
             body.Append(table);
             para = body.AppendChild(new Paragraph());
             run = para.AppendChild(new Run());

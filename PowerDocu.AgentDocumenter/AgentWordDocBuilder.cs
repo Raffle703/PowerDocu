@@ -9,23 +9,21 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using PowerDocu.Common;
 
-namespace PowerDocu.AppDocumenter
+namespace PowerDocu.AgentDocumenter
 {
-    class AppWordDocBuilder : WordDocBuilder
+    class AgentWordDocBuilder : WordDocBuilder
     {
-        private readonly AppDocumentationContent content;
+        private readonly AgentDocumentationContent content;
         private bool DetailedDocumentation = false;
         private bool documentChangedDefaultsOnly;
         private bool showDefaults;
         private bool documentSampleData;
 
-        public AppWordDocBuilder(AppDocumentationContent contentDocumentation, string template, bool documentChangedDefaultsOnly = false, bool showDefaults = true, bool documentSampleData = false, bool addTableOfContents = false)
+        public AgentWordDocBuilder(AgentDocumentationContent contentDocumentation, string template)
         {
             content = contentDocumentation;
-            this.documentChangedDefaultsOnly = documentChangedDefaultsOnly;
-            this.showDefaults = showDefaults;
-            this.documentSampleData = documentSampleData;
             Directory.CreateDirectory(content.folderPath);
+            /*
             do
             {
                 string filename = InitializeWordDocument(content.folderPath + content.filename + (DetailedDocumentation ? " detailed" : ""), template);
@@ -33,7 +31,6 @@ namespace PowerDocu.AppDocumenter
                 mainPart = wordDocument.MainDocumentPart;
                 body = mainPart.Document.Body;
                 PrepareDocument(!String.IsNullOrEmpty(template));
-                if (addTableOfContents) AddTableOfContents();
                 addAppProperties();
                 addAppVariablesInfo();
                 addAppDataSources();
@@ -43,8 +40,9 @@ namespace PowerDocu.AppDocumenter
                 DetailedDocumentation = !DetailedDocumentation;
             } while (DetailedDocumentation);
             NotificationHelper.SendNotification("Created Word documentation for " + contentDocumentation.Name);
+            */
         }
-
+/*
         private void addAppProperties()
         {
             Paragraph para = body.AppendChild(new Paragraph());
@@ -86,7 +84,7 @@ namespace PowerDocu.AppDocumenter
                     table.Append(tr);
                 }
             }
-            table.Append(CreateRow(new Text(content.appProperties.headerDocumentationGenerated), new Text(PowerDocuReleaseHelper.GetTimestampWithVersion())));
+            table.Append(CreateRow(new Text(content.appProperties.headerDocumentationGenerated), new Text(DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToShortTimeString())));
             Table statisticsTable = CreateTable();
             foreach (KeyValuePair<string, string> stats in content.appProperties.statisticsTable)
             {
@@ -110,11 +108,6 @@ namespace PowerDocu.AppDocumenter
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appProperties.headerAppInfo));
-            ApplyStyleToParagraph("Heading1", para);
-            body.AppendChild(new Paragraph(new Run()));
             addAppControlsTable(content.appControls.controls.First<ControlEntity>(o => o.Type == "appinfo"));
             if (DetailedDocumentation)
             {
@@ -159,14 +152,7 @@ namespace PowerDocu.AppDocumenter
                     varReferenceTable.Append(CreateHeaderRow(new Text("Control"), new Text("Property")));
                     foreach (ControlPropertyReference reference in references.OrderBy(o => o.Control.Name).ThenBy(o => o.RuleProperty))
                     {
-                        if (reference.Control.Type == "appinfo")
-                        {
-                            varReferenceTable.Append(CreateRow(new Text("App"), new Text(reference.RuleProperty)));
-                        }
-                        else
-                        {
-                            varReferenceTable.Append(CreateRow(new Text(reference.Control.Name + " (" + reference.Control.Screen()?.Name + ")"), new Text(reference.RuleProperty)));
-                        }
+                        varReferenceTable.Append(CreateRow(new Text(reference.Control.Name + " (" + reference.Control.Screen()?.Name + ")"), new Text(reference.RuleProperty)));
                     }
                 }
                 table.Append(CreateRow(new Text(var), varReferenceTable));
@@ -429,13 +415,7 @@ namespace PowerDocu.AppDocumenter
                     table.Append(CreateRow(new Text("Parent Control"), new Text(control.Parent.Name)));
                 }
             }
-            //todo isLocked property could be documented
-            /* //Other properties are likely not needed for documentation, still keeping this code in case we want to show them at some point
-            table.Append(CreateMergedRow(new Text("Properties"), 2, WordDocBuilder.cellHeaderBackground));
-            foreach (Expression expression in control.Properties)
-            {
-                AddExpressionTable(expression, table);
-            }*/
+           
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
         }
@@ -602,6 +582,6 @@ namespace PowerDocu.AppDocumenter
                 }
             }
             body.AppendChild(new Paragraph(new Run(new Break())));
-        }
+        }*/
     }
 }

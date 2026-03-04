@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using PowerDocu.Common;
+using PowerDocu.AgentDocumenter;
 using PowerDocu.AppDocumenter;
+using PowerDocu.AppModuleDocumenter;
 using PowerDocu.FlowDocumenter;
 
 namespace PowerDocu.SolutionDocumenter
@@ -11,6 +13,8 @@ namespace PowerDocu.SolutionDocumenter
     {
         private static List<FlowEntity> flows;
         private static List<AppEntity> apps;
+        private static List<AgentEntity> agents;
+        private static List<AppModuleEntity> appModules;
 
         public static void GenerateDocumentation(string filePath, bool fullDocumentation, ConfigHelper config, string outputPath = null)
         {
@@ -31,6 +35,12 @@ namespace PowerDocu.SolutionDocumenter
                     config,
                     outputPath
                 );
+                agents = AgentDocumentationGenerator.GenerateDocumentation(
+                    filePath,
+                    fullDocumentation,
+                    config,
+                    outputPath
+                );
 
                 // Parse and document the solution if enabled
                 if (config.documentSolution)
@@ -42,7 +52,15 @@ namespace PowerDocu.SolutionDocumenter
                             ? Path.GetDirectoryName(filePath) + @"\Solution " + CharsetHelper.GetSafeName(Path.GetFileNameWithoutExtension(filePath) + @"\")
                             : outputPath + @"\" + CharsetHelper.GetSafeName(Path.GetFileNameWithoutExtension(filePath) + @"\");
 
-                        SolutionDocumentationContent solutionContent = new SolutionDocumentationContent(solutionParser.solution, apps, flows, path);
+                        // Generate Model-Driven App documentation
+                        appModules = AppModuleDocumentationGenerator.GenerateDocumentation(
+                            solutionParser.solution,
+                            fullDocumentation,
+                            config,
+                            path
+                        );
+
+                        SolutionDocumentationContent solutionContent = new SolutionDocumentationContent(solutionParser.solution, apps, flows, appModules, path);
                         DataverseGraphBuilder dataverseGraphBuilder = new DataverseGraphBuilder(solutionContent);
 
                         if (fullDocumentation)
@@ -61,6 +79,8 @@ namespace PowerDocu.SolutionDocumenter
                                 NotificationHelper.SendNotification("Creating HTML Solution documentation");
                                 SolutionHtmlBuilder htmlDoc = new SolutionHtmlBuilder(solutionContent, config.documentDefaultColumns);
                             }
+                            // Free cached SVG content now that all output formats have been generated
+                            FormSvgBuilder.ClearCache();
                         }
                     }
                 }

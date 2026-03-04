@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using PowerDocu.Common;
 using Rubjerg.Graphviz;
 using System.Xml;
@@ -54,37 +56,45 @@ namespace PowerDocu.FlowDocumenter
             List<ActionNode> rootActions = flow.actions.getRootNodes();
 
             Node trigger = rootGraph.GetOrAddNode(CharsetHelper.GetSafeName(flow.trigger.Name));
-            trigger.SetAttribute("color", GraphColours.GetColourForAction("Trigger"));
-            trigger.SetAttribute("fillcolor", GraphColours.GetFillColourForAction("Trigger"));
-            trigger.SetAttribute("style", "filled");
-            if (!String.IsNullOrEmpty(flow.trigger.Description))
-            {
-                string html = "<table border=\"0\"><tr><td>" + CharsetHelper.GetSafeName(flow.trigger.Name) + "</td></tr>";
-                html += "<tr><td><FONT POINT-SIZE=\"10\">(" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flow.trigger.Description)) + ")</FONT></td></tr></table>";
-                trigger.SetAttributeHtml("label", html);
-            }
-            else
-            {
-                trigger.SetAttribute("label", CharsetHelper.GetSafeName(flow.trigger.Name));
-            }
+            trigger.SetAttribute("shape", "plaintext");
+            trigger.SetAttribute("margin", "0");
+
+            string triggerName = CharsetHelper.GetSafeName(flow.trigger.Name);
+            string triggerAccentColor = GraphColours.GetColourForAction("Trigger");
+            string triggerInnerHtml = null;
+
+            // Check for connector icon first (most specific label)
             if (!String.IsNullOrEmpty(flow.trigger.Connector))
             {
                 string connectorIcon = ConnectorHelper.getConnectorIconFile(flow.trigger.Connector);
-
                 if (!String.IsNullOrEmpty(connectorIcon))
                 {
                     string connectorIcon32Path = folderPath + Path.GetFileNameWithoutExtension(connectorIcon) + "32.png";
                     ImageHelper.ConvertImageTo32(connectorIcon, connectorIcon32Path);
-                    //path to image is absolute here, as GraphViz wasn't able to render it properly if relative. Will be replaced in the SVG just before the PNG gets generated
-                    string html = "<table border=\"0\"><tr><td><img src=\"" + connectorIcon32Path + "\" /></td><td>" + CharsetHelper.GetSafeName(flow.trigger.Name) + "</td></tr>";
+                    triggerInnerHtml = "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr><td><img src=\"" + connectorIcon32Path + "\" /></td><td> " + triggerName + "</td></tr>";
                     if (!String.IsNullOrEmpty(flow.trigger.Description))
                     {
-                        html += "<tr><td></td><td><FONT POINT-SIZE=\"10\">" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flow.trigger.Description)) + "</FONT></td></tr>";
+                        triggerInnerHtml += "<tr><td></td><td><FONT POINT-SIZE=\"10\">" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flow.trigger.Description)) + "</FONT></td></tr>";
                     }
-                    html += "</table>";
-                    trigger.SetAttributeHtml("label", html);
+                    triggerInnerHtml += "</table>";
                 }
             }
+
+            // Fall back to text-only label if no connector icon was found
+            if (triggerInnerHtml == null)
+            {
+                if (!String.IsNullOrEmpty(flow.trigger.Description))
+                {
+                    triggerInnerHtml = triggerName + "<br/><FONT POINT-SIZE=\"10\">(" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flow.trigger.Description)) + ")</FONT>";
+                }
+                else
+                {
+                    triggerInnerHtml = triggerName;
+                }
+            }
+
+            trigger.SetAttributeHtml("label", generateCardHtml(triggerAccentColor, triggerInnerHtml));
+
             foreach (ActionNode rootAction in rootActions)
             {
                 addNodesToGraph(rootGraph, rootAction, null, null, showSubactions, true);
@@ -147,46 +157,48 @@ namespace PowerDocu.FlowDocumenter
                 SubGraph noCluster = null;
                 //adding the current item as a new node
                 Node currentNode = rootGraph.GetOrAddNode(CharsetHelper.GetSafeName(node.Name));
-                currentNode.SetAttribute("shape", "box");
+                currentNode.SetAttribute("shape", "plaintext");
                 currentNode.SetAttribute("margin", "0");
-                currentNode.SetAttribute("color", GraphColours.GetColourForAction(node.Type));
-                currentNode.SetAttribute("style", "filled");
-                currentNode.SetAttribute("fillcolor", GraphColours.GetFillColourForAction(node.Type));
-                //setting the label here again with the name is required to make the connector icon code below work properly
-                if (!String.IsNullOrEmpty(node.Description))
-                {
-                    string html = "<table border=\"0\"><tr><td>" + CharsetHelper.GetSafeName(node.Name) + "</td></tr>";
-                    html += "<tr><td><font point-size=\"10\">" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(node.Description)) + "</font></td></tr></table>";
-                    currentNode.SetAttributeHtml("label", html);
-                }
-                else if (node.Type == "Switch")
-                {
-                    string html = "<table border=\"0\"><tr><td>" + CharsetHelper.GetSafeName(node.Name) + "</td></tr>";
-                    html += "<tr><td><FONT POINT-SIZE=\"10\">(" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(node.Expression)) + ")</FONT></td></tr></table>";
-                    currentNode.SetAttributeHtml("label", html);
-                }
-                else
-                {
-                    currentNode.SetAttribute("label", CharsetHelper.GetSafeName(node.Name));
-                }
+
+                string nodeName = CharsetHelper.GetSafeName(node.Name);
+                string nodeAccentColor = GraphColours.GetColourForAction(node.Type);
+                string nodeInnerHtml = null;
+
+                // Check for connector icon first (most specific label)
                 if (!String.IsNullOrEmpty(node.Connection))
                 {
                     string connectorIcon = ConnectorHelper.getConnectorIconFile(node.Connection);
-
                     if (!String.IsNullOrEmpty(connectorIcon))
                     {
                         string connectorIcon32Path = folderPath + Path.GetFileNameWithoutExtension(connectorIcon) + "32.png";
                         ImageHelper.ConvertImageTo32(connectorIcon, connectorIcon32Path);
-                        //path to image is absolute here, as GraphViz wasn't able to render it properly if relative. Will be replaced in the SVG just before the PNG gets generated
-                        string html = "<table border=\"0\"><tr><td><img src=\"" + connectorIcon32Path + "\" /></td><td>" + CharsetHelper.GetSafeName(node.Name) + "</td></tr>";
+                        nodeInnerHtml = "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr><td><img src=\"" + connectorIcon32Path + "\" /></td><td> " + nodeName + "</td></tr>";
                         if (!String.IsNullOrEmpty(node.Description))
                         {
-                            html += "<tr><td></td><td><font point-size=\"10\">" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(node.Description)) + "</font></td></tr>";
+                            nodeInnerHtml += "<tr><td></td><td><font point-size=\"10\">" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(node.Description)) + "</font></td></tr>";
                         }
-                        html += "</table>";
-                        currentNode.SetAttributeHtml("label", html);
+                        nodeInnerHtml += "</table>";
                     }
                 }
+
+                // Fall back to text-only label if no connector icon was found
+                if (nodeInnerHtml == null)
+                {
+                    if (!String.IsNullOrEmpty(node.Description))
+                    {
+                        nodeInnerHtml = nodeName + "<br/><font point-size=\"10\">" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(node.Description)) + "</font>";
+                    }
+                    else if (node.Type == "Switch")
+                    {
+                        nodeInnerHtml = nodeName + "<br/><FONT POINT-SIZE=\"10\">(" + generateMultiLineText(System.Web.HttpUtility.HtmlEncode(node.Expression)) + ")</FONT>";
+                    }
+                    else
+                    {
+                        nodeInnerHtml = nodeName;
+                    }
+                }
+
+                currentNode.SetAttributeHtml("label", generateCardHtml(nodeAccentColor, nodeInnerHtml));
 
                 //might not have subactions for yes/no? to check!
                 //if there are actions inside (likely only for Control), let's create a container
@@ -526,6 +538,19 @@ namespace PowerDocu.FlowDocumenter
                 edgeAB.SetAttribute("label", edgeLabel);
             }
             edges.Add(edgeName);
+        }
+
+        /// <summary>
+        /// Generates card-style HTML for Graphviz nodes: white background with a colored accent strip on the left,
+        /// matching the Power Automate UI card design.
+        /// </summary>
+        private string generateCardHtml(string accentColor, string innerHtml)
+        {
+            return "<table border=\"1\" cellborder=\"0\" cellspacing=\"0\" cellpadding=\"4\" color=\"#e0e0e0\" bgcolor=\"white\">"
+                 + "<tr>"
+                 + "<td bgcolor=\"" + accentColor + "\" width=\"6\"> </td>"
+                 + "<td cellpadding=\"6\">" + innerHtml + "</td>"
+                 + "</tr></table>";
         }
 
         //splits a text into multiple lines (<br/> for line breaks), with each line having a maximum of 65 characters

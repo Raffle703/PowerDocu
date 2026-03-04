@@ -79,10 +79,10 @@ namespace PowerDocu.AgentDocumenter
                 {
                     bmp?.Save(folderPath + @"Resources\KnowledgeSource.png");
                 }
-                infoNode.SetAttribute("color", GraphColours.GetColourForAction("Trigger"));
-                infoNode.SetAttribute("fillcolor", GraphColours.GetFillColourForAction("Trigger"));
-                infoNode.SetAttribute("style", "filled");
-                infoNode.SetAttributeHtml("label", $"<table border=\"0\"><tr><td>{createActionHeaderImageTable("KnowledgeSource", topicKind + ": " + topic.Name)}</td></tr></table>");
+                infoNode.SetAttribute("shape", "plain");
+                string infoHtml = createCardStart("Trigger", topicKind + ": " + topic.Name, "KnowledgeSource");
+                infoHtml += createCardEnd();
+                infoNode.SetAttributeHtml("label", infoHtml);
                 rootGraph.CreateLayout();
                 NotificationHelper.SendNotification("  - Created Graph " + folderPath + generateImageFiles(rootGraph, showSubactions) + ".png");
                 return;
@@ -98,23 +98,21 @@ namespace PowerDocu.AgentDocumenter
         {
             string triggerType = triggerYaml.Children[new YamlScalarNode("kind")].ToString();
             Node trigger = rootGraph.GetOrAddNode("Trigger " + topic.Name + " (" + topic.getTopicFileName() + ")");
-            trigger.SetAttribute("color", GraphColours.GetColourForAction("Trigger"));
-            trigger.SetAttribute("fillcolor", GraphColours.GetFillColourForAction("Trigger"));
-            trigger.SetAttribute("style", "filled");
+            trigger.SetAttribute("shape", "plain");
             var svgDocument = SvgDocument.FromSvg<SvgDocument>(AgentIcon.GetIcon("Trigger"));
             //generating the PNG from the SVG with a width of 20px because some SVGs are huge and downscaled, thus can't be shown directly
             using (var bitmap = svgDocument.Draw(20, 0))
             {
                 bitmap?.Save(folderPath + @"Resources\Trigger.png");
             }
-            string html = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable("Trigger", $"Trigger - {topic.Name}")}</td></tr>";
+            string html = createCardStart("Trigger", $"Trigger - {topic.Name}");
             switch (triggerType)
             {
                 case "OnRecognizedIntent":
 
-                    html += "<tr><td><table border=\"1\"><tr><td>The agent chooses</td></tr></table></td></tr>";
-                    html += "<tr><td>Describe what the topic does:</td></tr>";
-                    html += "<tr><td><table border=\"1\"><tr><td>This tool can handle queries like these:<br/>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>The agent chooses</td></tr></table>");
+                    html += createCardBodyRow("Describe what the topic does:");
+                    html += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td>This tool can handle queries like these:<br/>";
                     var intentYaml = (YamlMappingNode)triggerYaml.Children[new YamlScalarNode("intent")];
                     if (intentYaml.Children.TryGetValue(new YamlScalarNode("triggerQueries"), out var triggerQueryNode) && triggerQueryNode is YamlSequenceNode triggerQuerySequence)
                     {
@@ -124,16 +122,16 @@ namespace PowerDocu.AgentDocumenter
 
                     break;
                 case "OnConversationStart":
-                    html += "<tr><td><table border=\"1\"><tr><td>When a conversation starts</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>When a conversation starts</td></tr></table>");
                     break;
                 case "OnEscalate":
-                    html += "<tr><td><table border=\"1\"><tr><td>Talk to a representative</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>Talk to a representative</td></tr></table>");
                     if (triggerYaml.Children.TryGetValue(new YamlScalarNode("intent"), out var escIntentNode)
                         && escIntentNode is YamlMappingNode escIntentMapping
                         && escIntentMapping.Children.TryGetValue(new YamlScalarNode("triggerQueries"), out var escTriggerNode)
                         && escTriggerNode is YamlSequenceNode escTriggerSeq)
                     {
-                        html += "<tr><td><table border=\"1\"><tr><td>";
+                        html += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td>";
                         html += string.Join("<br/>", escTriggerSeq.Take(10));
                         if (escTriggerSeq.Count() > 10)
                             html += "<br/>... and more";
@@ -141,28 +139,28 @@ namespace PowerDocu.AgentDocumenter
                     }
                     break;
                 case "OnUnknownIntent":
-                    html += "<tr><td><table border=\"1\"><tr><td>Unknown / unmatched intent (Fallback)</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>Unknown / unmatched intent (Fallback)</td></tr></table>");
                     break;
                 case "OnRedirect":
-                    html += "<tr><td><table border=\"1\"><tr><td>Redirected from another topic</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>Redirected from another topic</td></tr></table>");
                     break;
                 case "OnSystemRedirect":
-                    html += "<tr><td><table border=\"1\"><tr><td>System redirect</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>System redirect</td></tr></table>");
                     break;
                 case "OnError":
-                    html += "<tr><td><table border=\"1\"><tr><td>When an error occurs</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>When an error occurs</td></tr></table>");
                     break;
                 case "OnSignIn":
-                    html += "<tr><td><table border=\"1\"><tr><td>When sign-in is required</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>When sign-in is required</td></tr></table>");
                     break;
                 case "OnSelectIntent":
-                    html += "<tr><td><table border=\"1\"><tr><td>When multiple topics matched</td></tr></table></td></tr>";
+                    html += createCardBodyRow("<table border=\"1\" cellpadding=\"4\"><tr><td>When multiple topics matched</td></tr></table>");
                     break;
                 default:
-                    html += $"<tr><td><table border=\"1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(triggerType)}</td></tr></table></td></tr>";
+                    html += createCardBodyRow($"<table border=\"1\" cellpadding=\"4\"><tr><td>{System.Web.HttpUtility.HtmlEncode(triggerType)}</td></tr></table>");
                     break;
             }
-            html += "</table>";
+            html += createCardEnd();
             trigger.SetAttributeHtml("label", html);
             return trigger;
         }
@@ -182,9 +180,7 @@ namespace PowerDocu.AgentDocumenter
                     if (actionType != "ConditionGroup")
                     {
                         actionNode = rootGraph.GetOrAddNode(actionName);
-                        actionNode.SetAttribute("color", GraphColours.GetColourForAction(actionType));
-                        actionNode.SetAttribute("fillcolor", GraphColours.GetFillColourForAction(actionType));
-                        actionNode.SetAttribute("style", "filled");
+                        actionNode.SetAttribute("shape", "plain");
                         parentCluster?.AddExisting(actionNode);
                         returnNode = actionNode;
                     }
@@ -203,8 +199,7 @@ namespace PowerDocu.AgentDocumenter
                     {
                         case "AdaptiveCard":
 
-                            string adapativeCardHtml = "<table border=\"0\">";
-                            adapativeCardHtml += $"<tr><td>{createActionHeaderImageTable(actionType, $"Adaptive Card: {displayName}")}</td></tr>";
+                            string adapativeCardHtml = createCardStart(actionType, $"Adaptive Card: {displayName}");
 
                             // Parse the card JSON content
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("card"), out var cardNode))
@@ -218,7 +213,8 @@ namespace PowerDocu.AgentDocumenter
                                     }
                                     JObject cardJson = JObject.Parse(cardJsonString);
 
-                                    adapativeCardHtml += "<tr><td><table border=\"1\">";
+                                    // Collect rows first to avoid empty table (Graphviz requires at least one <TR>)
+                                    var cardRows = new List<string>();
 
                                     // Process card body elements
                                     if (cardJson["body"] is JArray bodyArray)
@@ -228,33 +224,45 @@ namespace PowerDocu.AgentDocumenter
                                             string elementHtml = RenderCardElement(element as JObject);
                                             if (!string.IsNullOrEmpty(elementHtml))
                                             {
-                                                adapativeCardHtml += $"<tr><td>{elementHtml}</td></tr>";
+                                                cardRows.Add($"<tr><td>{elementHtml}</td></tr>");
                                             }
                                         }
                                     }
                                     // Process card actions
                                     if (cardJson["actions"] is JArray actionsArray)
                                     {
-                                        adapativeCardHtml += "<tr><td><b>Actions:</b></td></tr>";
+                                        bool hasActions = false;
                                         foreach (var cardAction in actionsArray)
                                         {
                                             string actionHtml = RenderCardAction(cardAction as JObject);
                                             if (!string.IsNullOrEmpty(actionHtml))
                                             {
-                                                adapativeCardHtml += $"<tr><td>{actionHtml}</td></tr>";
+                                                if (!hasActions) { cardRows.Add("<tr><td> </td></tr>"); hasActions = true; }
+                                                cardRows.Add($"<tr><td>{actionHtml}</td></tr>");
                                             }
                                         }
                                     }
-                                    adapativeCardHtml += "</table></td></tr>";
+
+                                    // Only emit the inner table if there are rows to show
+                                    if (cardRows.Count > 0)
+                                    {
+                                        adapativeCardHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\">";
+                                        adapativeCardHtml += string.Join("", cardRows);
+                                        adapativeCardHtml += "</table></td></tr>";
+                                    }
+                                    else
+                                    {
+                                        adapativeCardHtml += createCardBodyRow("(empty card)");
+                                    }
                                 }
-                                catch (JsonException ex)
+                                catch (Exception ex)
                                 {
-                                    adapativeCardHtml += $"<tr><td>Error parsing adaptive card JSON: {ex.Message}</td></tr>";
+                                    adapativeCardHtml += createCardBodyRow("Error parsing adaptive card: " + System.Web.HttpUtility.HtmlEncode(ex.Message));
                                 }
                             }
                             else
                             {
-                                adapativeCardHtml += "<tr><td>Adaptive Card definition not found</td></tr>";
+                                adapativeCardHtml += createCardBodyRow("Adaptive Card definition not found");
                             }
 
                             // Process output binding if present
@@ -263,27 +271,26 @@ namespace PowerDocu.AgentDocumenter
                                 outputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var bindingNode) &&
                                 bindingNode is YamlMappingNode outputBinding)
                             {
-                                adapativeCardHtml += "<tr><td><table border=\"1\">";
+                                adapativeCardHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\">";
                                 adapativeCardHtml += "<tr><td><b>Output Binding:</b></td></tr>";
                                 foreach (var outputItem in outputBinding.Children)
                                 {
-                                    adapativeCardHtml += $"<tr><td><b>{outputItem.Key}:</b> {outputItem.Value}</td></tr>";
+                                    adapativeCardHtml += $"<tr><td><b>{outputItem.Key}:</b> {formatVariable(outputItem.Value.ToString())}</td></tr>";
                                 }
                                 adapativeCardHtml += "</table></td></tr>";
                             }
 
-                            adapativeCardHtml += "</table>";
+                            adapativeCardHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", adapativeCardHtml);
                             break;
                         case "Question":
-                            string questionHtml = "<table border=\"0\">";
-                            questionHtml += $"<tr><td>{createActionHeaderImageTable(actionType, $"Question: {displayName}")}</td></tr>";
+                            string questionHtml = createCardStart(actionType, $"Question: {displayName}");
 
                             // Get the prompt text
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("prompt"), out var promptNode))
                             {
                                 string promptText = promptNode.ToString();
-                                questionHtml += "<tr><td><table border=\"1\">";
+                                questionHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\">";
                                 questionHtml += $"<tr><td>{generateMultiLineText(System.Web.HttpUtility.HtmlEncode(promptText))}</td></tr>";
                                 questionHtml += "</table></td></tr>";
                             }
@@ -293,21 +300,21 @@ namespace PowerDocu.AgentDocumenter
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("entity"), out var entityNode))
                             {
                                 string entityType = entityNode.ToString();
-                                questionHtml += $"<tr><td><b>Identify:</b> {entityType}</td></tr>";
+                                questionHtml += createCardBodyRow($"<b>Identify:</b> {entityType}");
                             }
 
                             // Get the variable name
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("variable"), out var variableNode))
                             {
                                 string variableName = variableNode.ToString();
-                                questionHtml += $"<tr><td><b>Save user response as:</b><br/> {variableName}</td></tr>";
+                                questionHtml += createCardBodyRow($"<b>Save user response as:</b><br/> {formatVariable(variableName)}");
                             }
 
                             // Check for choices if it's a choice question
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("choices"), out var choicesNode) && choicesNode is YamlSequenceNode choicesSequence)
                             {
-                                questionHtml += "<tr><td><b>Choices:</b></td></tr>";
-                                questionHtml += "<tr><td><table border=\"1\">";
+                                questionHtml += createCardBodyRow("<b>Choices:</b>");
+                                questionHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\">";
                                 foreach (var choice in choicesSequence)
                                 {
                                     if (choice is YamlMappingNode choiceMap)
@@ -333,7 +340,7 @@ namespace PowerDocu.AgentDocumenter
                                 questionHtml += "</table></td></tr>";
                             }
 
-                            questionHtml += "</table>";
+                            questionHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", questionHtml);
                             break;
                         case "ConditionGroup":
@@ -357,16 +364,11 @@ namespace PowerDocu.AgentDocumenter
                                 {
                                     //add the condition node
                                     Node conditionNode = rootGraph.GetOrAddNode("conditionnode-" + CharsetHelper.GetSafeName(((YamlMappingNode)condition).Children[new YamlScalarNode("id")].ToString()));
-                                    conditionNode.SetAttribute("color", GraphColours.GetColourForAction(actionType));
-                                    conditionNode.SetAttribute("fillcolor", GraphColours.GetFillColourForAction(actionType));
-                                    conditionNode.SetAttribute("style", "filled");
-                                    string conditionHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, "Condition")}</td></tr>";
-                                    string conditionString = System.Web.HttpUtility.HtmlEncode(((YamlMappingNode)condition).Children[new YamlScalarNode("condition")].ToString());
-                                    if (conditionString.StartsWith('='))
-                                    {
-                                        conditionString = conditionString.Substring(1);
-                                    }
-                                    conditionHtml += "<tr><td><table border=\"1\"><tr><td>" + generateMultiLineText(conditionString) + "</td></tr></table></td></tr></table>";
+                                    conditionNode.SetAttribute("shape", "plain");
+                                    string rawCondition = ((YamlMappingNode)condition).Children[new YamlScalarNode("condition")].ToString();
+                                    string conditionHtml = createCardStart(actionType, "Condition");
+                                    conditionHtml += createCardBodyRow(formatConditionExpression(rawCondition));
+                                    conditionHtml += createCardEnd();
                                     conditionNode.SetAttributeHtml("label", conditionHtml);
 
                                     // Create edge from previous node to condition node
@@ -386,11 +388,11 @@ namespace PowerDocu.AgentDocumenter
                             {
                                 //add the else actions node
                                 Node elseActionsNode = rootGraph.GetOrAddNode("elseactionsnode-" + actionName);
-                                elseActionsNode.SetAttribute("color", GraphColours.GetColourForAction(actionType));
-                                elseActionsNode.SetAttribute("fillcolor", GraphColours.GetFillColourForAction(actionType));
-                                elseActionsNode.SetAttribute("style", "filled");
-                                string conditionHtml = "<table border=\"0\"><tr><td>All Other Conditions</td></tr></table>";
-                                elseActionsNode.SetAttributeHtml("label", conditionHtml);
+                                elseActionsNode.SetAttribute("shape", "plain");
+                                string elseHtml = createCardStart(actionType, "Condition");
+                                elseHtml += createCardBodyRow("All Other Conditions");
+                                elseHtml += createCardEnd();
+                                elseActionsNode.SetAttributeHtml("label", elseHtml);
                                 Edge edge = rootGraph.GetOrAddEdge(prevNode, elseActionsNode, "edge to " + "elseactionsnode-" + actionName);
                                 edge.SetAttribute("weight", "1");
                                 conditionCluster.AddExisting(elseActionsNode);
@@ -426,12 +428,12 @@ namespace PowerDocu.AgentDocumenter
                             prevNode = clusterExitNode;
                             break;
                         case "AIModel":
-                            string aiModelHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? $"Prompt: {displayName}" : "Prompt")}</td></tr>";
+                            string aiModelHtml = createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "Prompt");
 
                             // Show AI Model ID if present
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("aIModelId"), out var aiModelIdNode))
                             {
-                                aiModelHtml += $"<tr><td><b>AI Model ID:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(aiModelIdNode.ToString()))}</td></tr>";
+                                aiModelHtml += createCardBodyRow($"<font point-size=\"9\"><b>AI Model ID:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(aiModelIdNode.ToString()))}</font>");
                             }
 
                             // Show input bindings
@@ -440,10 +442,10 @@ namespace PowerDocu.AgentDocumenter
                                 && aiInputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var aiBindingNode)
                                 && aiBindingNode is YamlMappingNode aiBindingMapping)
                             {
-                                aiModelHtml += "<tr><td><table border=\"1\"><tr><td><b>Inputs:</b></td></tr>";
+                                aiModelHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td><b>Inputs:</b></td></tr>";
                                 foreach (var kvp in aiBindingMapping.Children)
                                 {
-                                    aiModelHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(kvp.Value.ToString()))}</td></tr>";
+                                    aiModelHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {formatVariable(kvp.Value.ToString())}</td></tr>";
                                 }
                                 aiModelHtml += "</table></td></tr>";
                             }
@@ -454,15 +456,15 @@ namespace PowerDocu.AgentDocumenter
                                 && aiOutputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var aiOutputBindingNode)
                                 && aiOutputBindingNode is YamlMappingNode aiOutputBindingMapping)
                             {
-                                aiModelHtml += "<tr><td><table border=\"1\"><tr><td><b>Outputs:</b></td></tr>";
+                                aiModelHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td><b>Outputs:</b></td></tr>";
                                 foreach (var kvp in aiOutputBindingMapping.Children)
                                 {
-                                    aiModelHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(kvp.Value.ToString()))}</td></tr>";
+                                    aiModelHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {formatVariable(kvp.Value.ToString())}</td></tr>";
                                 }
                                 aiModelHtml += "</table></td></tr>";
                             }
 
-                            aiModelHtml += "</table>";
+                            aiModelHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", aiModelHtml);
                             break;
                         case "Message":
@@ -477,43 +479,47 @@ namespace PowerDocu.AgentDocumenter
                             {
                                 messageYaml = (YamlScalarNode)activityYaml;
                             }
-                            actionNode.SetAttributeHtml("label", $"<table border=\"1\"><tr><td>{createActionHeaderImageTable(actionType, "Message")}</td></tr><tr><td>" + CharsetHelper.GetSafeName(messageYaml.Value).Replace("\n", "<br/>") + "</td></tr></table>");
+                            string msgHtml = createCardStart(actionType, "Message");
+                            msgHtml += createCardBodyRow(CharsetHelper.GetSafeName(messageYaml.Value).Replace("\n", "<br/>"));
+                            msgHtml += createCardEnd();
+                            actionNode.SetAttributeHtml("label", msgHtml);
                             break;
                         case "SetVariable":
                             var variableYaml = (YamlScalarNode)((YamlMappingNode)action).Children[new YamlScalarNode("variable")];
                             var valueYaml = (YamlScalarNode)((YamlMappingNode)action).Children[new YamlScalarNode("value")];
-                            string html = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, "Set Variable")}</td></tr>";
-                            html += "<tr><td><table border=\"1\"><tr><td>" + variableYaml.Value + "</td></tr></table></td></tr>";
-                            html += "<tr><td>To Value</td></tr>";
+                            string setVarHtml = createCardStart(actionType, "Set Variable");
+                            setVarHtml += createCardBodyRow($"<table border=\"1\" cellpadding=\"4\"><tr><td>{formatVariable(variableYaml.Value)}</td></tr></table>");
+                            setVarHtml += createCardBodyRow("To Value");
                             string variableValue = valueYaml.Value;
                             if (variableValue.StartsWith('='))
                             {
                                 variableValue = variableValue.Substring(1);
                             }
-                            html += "<tr><td><table border=\"1\"><tr><td>" + generateMultiLineText(variableValue) + "</td></tr></table></td></tr></table>"; ;
-                            actionNode.SetAttributeHtml("label", html);
+                            setVarHtml += createCardBodyRow($"<table border=\"1\" cellpadding=\"4\"><tr><td>{generateMultiLineText(variableValue)}</td></tr></table>");
+                            setVarHtml += createCardEnd();
+                            actionNode.SetAttributeHtml("label", setVarHtml);
                             break;
                         case "CancelAllDialogs":
-                            actionNode.SetAttributeHtml("label", $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "End all topics")}</td></tr><tr><td></td></tr></table>");
+                            actionNode.SetAttributeHtml("label", createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "End all topics") + createCardEnd());
                             break;
                         case "LogCustomTelemetry":
-                            actionNode.SetAttributeHtml("label", $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "Log custom telemetry event")}</td></tr><tr><td></td></tr></table>");
+                            actionNode.SetAttributeHtml("label", createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "Log custom telemetry event") + createCardEnd());
                             break;
                         case "InvokeFlow":
-                            string flowHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? $"Flow: {displayName}" : "Call a flow")}</td></tr>";
+                            string flowHtml = createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? $"Flow: {displayName}" : "Call a flow");
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("flowId"), out var flowIdNode))
                             {
-                                flowHtml += $"<tr><td><b>Flow ID:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flowIdNode.ToString()))}</td></tr>";
+                                flowHtml += createCardBodyRow($"<font point-size=\"9\"><b>Flow ID:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flowIdNode.ToString()))}</font>");
                             }
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("input"), out var flowInputNode)
                                 && flowInputNode is YamlMappingNode flowInputMapping
                                 && flowInputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var flowBindingNode)
                                 && flowBindingNode is YamlMappingNode flowBindingMapping)
                             {
-                                flowHtml += "<tr><td><table border=\"1\"><tr><td><b>Inputs:</b></td></tr>";
+                                flowHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td><b>Inputs:</b></td></tr>";
                                 foreach (var kvp in flowBindingMapping.Children)
                                 {
-                                    flowHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(kvp.Value.ToString()))}</td></tr>";
+                                    flowHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {formatVariable(kvp.Value.ToString())}</td></tr>";
                                 }
                                 flowHtml += "</table></td></tr>";
                             }
@@ -522,30 +528,30 @@ namespace PowerDocu.AgentDocumenter
                                 && flowOutputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var flowOutputBindingNode)
                                 && flowOutputBindingNode is YamlMappingNode flowOutputBindingMapping)
                             {
-                                flowHtml += "<tr><td><table border=\"1\"><tr><td><b>Outputs:</b></td></tr>";
+                                flowHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td><b>Outputs:</b></td></tr>";
                                 foreach (var kvp in flowOutputBindingMapping.Children)
                                 {
-                                    flowHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(kvp.Value.ToString()))}</td></tr>";
+                                    flowHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {formatVariable(kvp.Value.ToString())}</td></tr>";
                                 }
                                 flowHtml += "</table></td></tr>";
                             }
-                            flowHtml += "</table>";
+                            flowHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", flowHtml);
                             break;
                         case "InvokeConnector":
-                            string connHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? $"Connector: {displayName}" : "Call a connector")}</td></tr>";
+                            string connHtml = createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? $"Connector: {displayName}" : "Call a connector");
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("connectionReference"), out var connRefNode))
                             {
-                                connHtml += $"<tr><td><b>Connection:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(connRefNode.ToString()))}</td></tr>";
+                                connHtml += createCardBodyRow($"<b>Connection:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(connRefNode.ToString()))}");
                             }
-                            connHtml += "</table>";
+                            connHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", connHtml);
                             break;
                         case "EndConversation":
-                            actionNode.SetAttributeHtml("label", $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "End conversation")}</td></tr></table>");
+                            actionNode.SetAttributeHtml("label", createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "End conversation") + createCardEnd());
                             break;
                         case "EndDialog":
-                            actionNode.SetAttributeHtml("label", $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "End dialog")}</td></tr></table>");
+                            actionNode.SetAttributeHtml("label", createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "End dialog") + createCardEnd());
                             break;
                         case "OAuthInput":
                             string oauthTitle = "Sign in";
@@ -554,24 +560,24 @@ namespace PowerDocu.AgentDocumenter
                             string oauthText = "";
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("text"), out var oauthTextNode))
                                 oauthText = oauthTextNode.ToString();
-                            string oauthHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, $"Sign In: {System.Web.HttpUtility.HtmlEncode(oauthTitle)}")}</td></tr>";
+                            string oauthHtml = createCardStart(actionType, $"Sign In: {System.Web.HttpUtility.HtmlEncode(oauthTitle)}");
                             if (!string.IsNullOrEmpty(oauthText))
-                                oauthHtml += $"<tr><td>{generateMultiLineText(System.Web.HttpUtility.HtmlEncode(oauthText))}</td></tr>";
-                            oauthHtml += "</table>";
+                                oauthHtml += createCardBodyRow(generateMultiLineText(System.Web.HttpUtility.HtmlEncode(oauthText)));
+                            oauthHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", oauthHtml);
                             break;
                         case "SearchAndSummarize":
-                            string searchHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "Search and summarize content")}</td></tr>";
+                            string searchHtml = createCardStart(actionType, !string.IsNullOrEmpty(displayName) ? displayName : "Search and summarize content");
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("variable"), out var searchVarNode))
                             {
-                                searchHtml += $"<tr><td><b>Save to:</b> {System.Web.HttpUtility.HtmlEncode(searchVarNode.ToString())}</td></tr>";
+                                searchHtml += createCardBodyRow($"<b>Save to:</b> {formatVariable(searchVarNode.ToString())}");
                             }
-                            searchHtml += "</table>";
+                            searchHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", searchHtml);
                             break;
                         case "RedirectToTopic":
                             string redirectHeader = !string.IsNullOrEmpty(displayName) ? $"Redirect: {displayName}" : "Redirect to topic";
-                            string redirectHtml = $"<table border=\"0\"><tr><td>{createActionHeaderImageTable(actionType, redirectHeader)}</td></tr>";
+                            string redirectHtml = createCardStart(actionType, redirectHeader);
 
                             // Show target dialog/topic for BeginDialog actions
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("dialog"), out var dialogNode))
@@ -579,13 +585,13 @@ namespace PowerDocu.AgentDocumenter
                                 string dialogRef = dialogNode.ToString();
                                 // Extract the topic name from the schema name (e.g. cr6b0_agent.topic.SessionAudit -> SessionAudit)
                                 string topicName = dialogRef.Contains('.') ? dialogRef.Substring(dialogRef.LastIndexOf('.') + 1) : dialogRef;
-                                redirectHtml += $"<tr><td><table border=\"1\"><tr><td><b>Target Topic:</b> {System.Web.HttpUtility.HtmlEncode(topicName)}</td></tr></table></td></tr>";
+                                redirectHtml += createCardBodyRow($"<table border=\"1\" cellpadding=\"4\"><tr><td><b>Target Topic:</b> {System.Web.HttpUtility.HtmlEncode(topicName)}</td></tr></table>");
                             }
 
                             // Show target action ID for GotoAction (internal jump)
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("actionId"), out var actionIdNode))
                             {
-                                redirectHtml += $"<tr><td><table border=\"1\"><tr><td><b>Go to:</b> {System.Web.HttpUtility.HtmlEncode(actionIdNode.ToString())}</td></tr></table></td></tr>";
+                                redirectHtml += createCardBodyRow($"<table border=\"1\" cellpadding=\"4\"><tr><td><b>Go to:</b> {System.Web.HttpUtility.HtmlEncode(actionIdNode.ToString())}</td></tr></table>");
                             }
 
                             // Show input bindings if present (for parameterized topic calls)
@@ -594,10 +600,10 @@ namespace PowerDocu.AgentDocumenter
                                 && redirectInputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var redirectBindingNode)
                                 && redirectBindingNode is YamlMappingNode redirectBindingMapping)
                             {
-                                redirectHtml += "<tr><td><table border=\"1\"><tr><td><b>Inputs:</b></td></tr>";
+                                redirectHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td><b>Inputs:</b></td></tr>";
                                 foreach (var kvp in redirectBindingMapping.Children)
                                 {
-                                    redirectHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(kvp.Value.ToString()))}</td></tr>";
+                                    redirectHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {formatVariable(kvp.Value.ToString())}</td></tr>";
                                 }
                                 redirectHtml += "</table></td></tr>";
                             }
@@ -608,15 +614,15 @@ namespace PowerDocu.AgentDocumenter
                                 && redirectOutputMapping.Children.TryGetValue(new YamlScalarNode("binding"), out var redirectOutputBindingNode)
                                 && redirectOutputBindingNode is YamlMappingNode redirectOutputBindingMapping)
                             {
-                                redirectHtml += "<tr><td><table border=\"1\"><tr><td><b>Outputs:</b></td></tr>";
+                                redirectHtml += "<tr><td cellpadding=\"8\"><table border=\"1\" cellpadding=\"4\"><tr><td><b>Outputs:</b></td></tr>";
                                 foreach (var kvp in redirectOutputBindingMapping.Children)
                                 {
-                                    redirectHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(kvp.Value.ToString()))}</td></tr>";
+                                    redirectHtml += $"<tr><td><b>{System.Web.HttpUtility.HtmlEncode(kvp.Key.ToString())}:</b> {formatVariable(kvp.Value.ToString())}</td></tr>";
                                 }
                                 redirectHtml += "</table></td></tr>";
                             }
 
-                            redirectHtml += "</table>";
+                            redirectHtml += createCardEnd();
                             actionNode.SetAttributeHtml("label", redirectHtml);
                             break;
                         default:
@@ -636,9 +642,117 @@ namespace PowerDocu.AgentDocumenter
             return returnNode;
         }
 
-        private object createActionHeaderImageTable(string actionType, string headerText)
+        /// <summary>
+        /// Creates the start of a card-style node label with a colored header bar, similar to Copilot Studio UI.
+        /// </summary>
+        private string createCardStart(string actionType, string headerText, string iconType = null)
         {
-            return $"<table border=\"0\"><tr><td width=\"24\"><img src=\"{folderPath + @"Resources\" + actionType}.png\" /></td><td>{headerText}</td></tr></table>";
+            string borderColor = GraphColours.GetColourForAction(actionType);
+            string iconName = iconType ?? actionType;
+            return $"<table border=\"2\" cellborder=\"0\" cellspacing=\"0\" cellpadding=\"0\" color=\"{borderColor}\" bgcolor=\"white\" style=\"rounded\">"
+                 + $"<tr><td bgcolor=\"{borderColor}\" cellpadding=\"8\" align=\"left\">"
+                 + $"<table border=\"0\" cellspacing=\"0\" cellpadding=\"2\"><tr>"
+                 + $"<td width=\"20\"><img src=\"{folderPath + @"Resources\" + iconName}.png\" /></td>"
+                 + $"<td><font color=\"white\"><b>  {headerText}</b></font></td>"
+                 + $"<td>   </td>"
+                 + $"</tr></table></td></tr>";
+        }
+
+        /// <summary>
+        /// Creates a body row for the card with padding.
+        /// </summary>
+        private string createCardBodyRow(string content)
+        {
+            return $"<tr><td cellpadding=\"8\" align=\"left\">{content}</td></tr>";
+        }
+
+        /// <summary>
+        /// Closes the card table.
+        /// </summary>
+        private string createCardEnd()
+        {
+            return "</table>";
+        }
+
+        /// <summary>
+        /// Formats a variable reference with the (x) badge style, similar to Copilot Studio.
+        /// </summary>
+        private string formatVariable(string varName)
+        {
+            return $"<font color=\"#0078d4\"><b>(x)</b></font> {System.Web.HttpUtility.HtmlEncode(varName)}";
+        }
+
+        /// <summary>
+        /// Parses a condition expression and formats it with individual rows and Or/And separators.
+        /// </summary>
+        private string formatConditionExpression(string conditionString)
+        {
+            if (conditionString.StartsWith("="))
+                conditionString = conditionString.Substring(1).Trim();
+
+            // Try to split by || (OR)
+            var orParts = Regex.Split(conditionString, @"\s*\|\|\s*");
+            if (orParts.Length > 1)
+            {
+                string html = "<table border=\"0\" cellpadding=\"3\">";
+                for (int i = 0; i < orParts.Length; i++)
+                {
+                    if (i > 0)
+                        html += "<tr><td><b>Or</b></td></tr>";
+                    html += $"<tr><td><table border=\"1\" cellpadding=\"4\"><tr><td>{formatSingleCondition(orParts[i].Trim())}</td></tr></table></td></tr>";
+                }
+                html += "</table>";
+                return html;
+            }
+
+            // Try && (AND)
+            var andParts = Regex.Split(conditionString, @"\s*&&\s*");
+            if (andParts.Length > 1)
+            {
+                string html = "<table border=\"0\" cellpadding=\"3\">";
+                for (int i = 0; i < andParts.Length; i++)
+                {
+                    if (i > 0)
+                        html += "<tr><td><b>And</b></td></tr>";
+                    html += $"<tr><td><table border=\"1\" cellpadding=\"4\"><tr><td>{formatSingleCondition(andParts[i].Trim())}</td></tr></table></td></tr>";
+                }
+                html += "</table>";
+                return html;
+            }
+
+            // Single condition
+            return $"<table border=\"1\" cellpadding=\"4\"><tr><td>{formatSingleCondition(conditionString)}</td></tr></table>";
+        }
+
+        /// <summary>
+        /// Formats a single condition clause with variable badge, operator text, and value.
+        /// </summary>
+        private string formatSingleCondition(string condition)
+        {
+            condition = condition.Trim();
+            // Try to parse: Variable operator "value" or Variable operator value
+            var match = Regex.Match(condition, @"^(.+?)\s*(<>|!=|>=|<=|=|>|<)\s*(.+)$");
+            if (match.Success)
+            {
+                string variable = match.Groups[1].Value.Trim();
+                string op = match.Groups[2].Value;
+                string value = match.Groups[3].Value.Trim();
+
+                string opText = op switch
+                {
+                    "=" => "is equal to",
+                    "<>" or "!=" => "is not equal to",
+                    ">" => "is greater than",
+                    "<" => "is less than",
+                    ">=" => "is greater than or equal to",
+                    "<=" => "is less than or equal to",
+                    _ => op
+                };
+
+                return $"{formatVariable(variable)}<br/>{System.Web.HttpUtility.HtmlEncode(opText)}<br/>{System.Web.HttpUtility.HtmlEncode(value)}";
+            }
+
+            return generateMultiLineText(System.Web.HttpUtility.HtmlEncode(condition));
         }
 
         private string GetActionType(YamlMappingNode action)
@@ -761,7 +875,7 @@ namespace PowerDocu.AgentDocumenter
                 "Image" => RenderImage(element),
                 "FactSet" => RenderFactSet(element),
                 "ActionSet" => RenderActionSet(element),*/
-                _ => $"<i>Element: {elementType}</i>"
+                _ => $"<i>Element: {System.Web.HttpUtility.HtmlEncode(elementType)}</i>"
             };
         }
 
@@ -774,19 +888,26 @@ namespace PowerDocu.AgentDocumenter
 
             return actionType switch
             {
-                "Action.Submit" => $"<b>Submit:</b> {title}",
-                "Action.OpenUrl" => $"<b>Open URL:</b> {title} → {action["url"]?.ToString() ?? ""}",
-                "Action.ShowCard" => $"<b>Show Card:</b> {title}",
-                "Action.Execute" => $"<b>Execute:</b> {title}",
-                "Action.ToggleVisibility" => $"<b>Toggle Visibility:</b> {title}",
-                _ => $"<b>{actionType}:</b> {title}"
+                "Action.Submit" => $"<table border=\"1\" cellpadding=\"4\" bgcolor=\"#f3f2f1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(title)}</td></tr></table>",
+                "Action.OpenUrl" => $"<table border=\"1\" cellpadding=\"4\" bgcolor=\"#f3f2f1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(title)}</td></tr></table>",
+                "Action.ShowCard" => $"<table border=\"1\" cellpadding=\"4\" bgcolor=\"#f3f2f1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(title)}</td></tr></table>",
+                "Action.Execute" => $"<table border=\"1\" cellpadding=\"4\" bgcolor=\"#f3f2f1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(title)}</td></tr></table>",
+                "Action.ToggleVisibility" => $"<table border=\"1\" cellpadding=\"4\" bgcolor=\"#f3f2f1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(title)}</td></tr></table>",
+                _ => $"<table border=\"1\" cellpadding=\"4\" bgcolor=\"#f3f2f1\"><tr><td>{System.Web.HttpUtility.HtmlEncode(title)}</td></tr></table>"
             };
         }
 
         private string RenderTextBlock(JObject element)
         {
             string text = element["text"]?.ToString() ?? "";
-            return generateMultiLineText(System.Web.HttpUtility.HtmlEncode(text));
+            bool isSubtle = element["isSubtle"]?.ToObject<bool>() ?? false;
+            string weight = element["weight"]?.ToString() ?? "";
+            string encodedText = generateMultiLineText(System.Web.HttpUtility.HtmlEncode(text));
+            if (weight == "Bolder")
+                encodedText = $"<b>{encodedText}</b>";
+            if (isSubtle)
+                encodedText = $"<i>{encodedText}</i>";
+            return encodedText;
         }
 
         private string RenderInputText(JObject element)
@@ -795,9 +916,22 @@ namespace PowerDocu.AgentDocumenter
             string placeholder = element["placeholder"]?.ToString() ?? "";
             string label = element["label"]?.ToString() ?? "";
             bool isMultiline = element["isMultiline"]?.ToObject<bool>() ?? false;
+            bool isRequired = element["isRequired"]?.ToObject<bool>() ?? false;
 
-            string inputType = isMultiline ? "Multi-line Text" : "Text";
-            return $"<b>{inputType} Input:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(label))}<br/>{generateMultiLineText(System.Web.HttpUtility.HtmlEncode(placeholder))}<br/>";
+            // Graphviz HTML-label cells cannot mix text and <table> children.
+            // Wrap everything in a single table so a <td> only ever contains one table.
+            string requiredMark = isRequired ? "<font color=\"red\"> *</font>" : "";
+            string html = "<table border=\"0\" cellpadding=\"2\">";
+            if (!string.IsNullOrEmpty(label))
+            {
+                html += $"<tr><td>{generateMultiLineText(System.Web.HttpUtility.HtmlEncode(label))}{requiredMark}</td></tr>";
+            }
+            if (!string.IsNullOrEmpty(placeholder))
+            {
+                html += $"<tr><td><table border=\"1\" cellpadding=\"4\" color=\"#cccccc\"><tr><td><font color=\"#999999\">{generateMultiLineText(System.Web.HttpUtility.HtmlEncode(placeholder))}</font></td></tr></table></td></tr>";
+            }
+            html += "</table>";
+            return html;
         }
 
         private string RenderInputChoiceSet(JObject element)
@@ -807,19 +941,22 @@ namespace PowerDocu.AgentDocumenter
             bool isMultiSelect = element["isMultiSelect"]?.ToObject<bool>() ?? false;
 
             string choicesText = "";
+            string indicator = isMultiSelect ? "[ ]" : "( )";
             if (element["choices"] is JArray choices)
             {
                 var choiceList = new List<string>();
                 foreach (var choice in choices)
                 {
                     string title = choice["title"]?.ToString() ?? "";
-                    choiceList.Add(System.Web.HttpUtility.HtmlEncode(title));
+                    choiceList.Add($"  {indicator} {System.Web.HttpUtility.HtmlEncode(title)}");
                 }
-                choicesText = string.Join("<br/> ", choiceList);
+                choicesText = string.Join("<br/>", choiceList);
             }
 
-            string selectType = isMultiSelect ? "Multi-Select" : "Single-Select";
-            return $"<b>{selectType}:</b><br/> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(label))}<br/>{choicesText}";
+            bool isRequired = element["isRequired"]?.ToObject<bool>() ?? false;
+            string requiredMark = isRequired ? "<font color=\"red\"> *</font>" : "";
+            string selectLabel = !string.IsNullOrEmpty(label) ? $"{generateMultiLineText(System.Web.HttpUtility.HtmlEncode(label))}{requiredMark}" : "";
+            return $"{selectLabel}<br/>{choicesText}";
         }
 
         private string RenderInputDate(JObject element)

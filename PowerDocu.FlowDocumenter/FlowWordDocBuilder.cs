@@ -163,10 +163,7 @@ namespace PowerDocu.FlowDocumenter
                 {
                     var tr = new TableRow();
                     var tc = CreateTableCell();
-                    run = new Run(new Text("Used in these Actions"));
-                    RunProperties runProperties = new RunProperties();
-                    runProperties.Append(new Bold());
-                    run.RunProperties = runProperties;
+                    run = CreateBoldRun("Used in these Actions");
                     tc.Append(new Paragraph(run));
                     tr.Append(tc);
                     tc = CreateTableCell();
@@ -381,10 +378,7 @@ namespace PowerDocu.FlowDocumenter
                     {
                         var tr = new TableRow();
                         var tc = CreateTableCell();
-                        run = new Run(new Text(action.Type == "Switch" ? "Switch Actions" : "Subactions"));
-                        RunProperties runProperties = new RunProperties();
-                        runProperties.Append(new Bold());
-                        run.RunProperties = runProperties;
+                        run = CreateBoldRun(action.Type == "Switch" ? "Switch Actions" : "Subactions");
                         tc.Append(new Paragraph(run));
                         tr.Append(tc);
                         tc = CreateTableCell();
@@ -424,10 +418,7 @@ namespace PowerDocu.FlowDocumenter
                     {
                         var tr = new TableRow();
                         var tc = CreateTableCell();
-                        run = new Run(new Text("Elseactions"));
-                        RunProperties runProperties = new RunProperties();
-                        runProperties.Append(new Bold());
-                        run.RunProperties = runProperties;
+                        run = CreateBoldRun("Elseactions");
                         tc.Append(new Paragraph(run));
                         tr.Append(tc);
                         tc = CreateTableCell();
@@ -448,10 +439,7 @@ namespace PowerDocu.FlowDocumenter
                 {
                     var tr = new TableRow();
                     var tc = CreateTableCell();
-                    run = new Run(new Text("Next Action(s) Conditions"));
-                    RunProperties runProperties = new RunProperties();
-                    runProperties.Append(new Bold());
-                    run.RunProperties = runProperties;
+                    run = CreateBoldRun("Next Action(s) Conditions");
                     tc.Append(new Paragraph(run));
                     tr.Append(tc);
                     tc = CreateTableCell();

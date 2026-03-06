@@ -75,13 +75,7 @@ namespace PowerDocu.AppDocumenter
                     if (!String.IsNullOrEmpty(content.appProperties.appBackgroundColour))
                     {
                         TableCell tc = (TableCell)tr.LastChild;
-                        var shading = new Shading()
-                        {
-                            Color = "auto",
-                            Fill = ColourHelper.ParseColor(content.appProperties.appBackgroundColour),
-                            Val = ShadingPatternValues.Clear
-                        };
-                        tc.TableCellProperties.Append(shading);
+                        EnsureCellProperties(tc).Append(CreateCellShading(ColourHelper.ParseColor(content.appProperties.appBackgroundColour)));
                     }
                     table.Append(tr);
                 }
@@ -282,15 +276,8 @@ namespace PowerDocu.AppDocumenter
 
         private Table CreateControlTable(ControlEntity control, BorderValues borderType)
         {
-            Table table = CreateTable();
-            table.GetFirstChild<TableProperties>().TableBorders = new TableBorders(
-                    SetDefaultTableBorderStyle(new TopBorder(), borderType),
-                    SetDefaultTableBorderStyle(new LeftBorder(), borderType),
-                    SetDefaultTableBorderStyle(new BottomBorder(), borderType),
-                    SetDefaultTableBorderStyle(new RightBorder(), borderType),
-                    SetDefaultTableBorderStyle(new InsideHorizontalBorder(), BorderValues.None),
-                    SetDefaultTableBorderStyle(new InsideVerticalBorder(), BorderValues.None)
-                );
+            string styleId = borderType == BorderValues.None ? TableStyleNone : TableStyleOuterOnly;
+            Table table = CreateStyledTable(styleId);
             string controlType = control.Type;
             OpenXmlElement controlElement;
             if (DetailedDocumentation)
@@ -457,24 +444,14 @@ namespace PowerDocu.AppDocumenter
             TableRow tr = CreateRow(firstColumnElement, secondColumnElement);
             //update the cell with the current value
             TableCell tc = (TableCell)tr.FirstChild;
-            var shading = new Shading()
-            {
-                Color = "auto",
-                Fill = "ccffcc",
-                Val = ShadingPatternValues.Clear
-            };
-            tc.TableCellProperties.Append(shading);
-            tc.TableCellProperties.TableCellWidth = (TableCellWidth)fiftyPercentWidth.Clone();
+            var cellProps = EnsureCellProperties(tc);
+            cellProps.Append(CreateCellShading("ccffcc"));
+            cellProps.TableCellWidth = (TableCellWidth)fiftyPercentWidth.Clone();
             //update the cell with the default value
             tc = (TableCell)tr.LastChild;
-            shading = new Shading()
-            {
-                Color = "auto",
-                Fill = "ffcccc",
-                Val = ShadingPatternValues.Clear
-            };
-            tc.TableCellProperties.Append(shading);
-            tc.TableCellProperties.TableCellWidth = (TableCellWidth)fiftyPercentWidth.Clone();
+            cellProps = EnsureCellProperties(tc);
+            cellProps.Append(CreateCellShading("ffcccc"));
+            cellProps.TableCellWidth = (TableCellWidth)fiftyPercentWidth.Clone();
             return tr;
         }
 

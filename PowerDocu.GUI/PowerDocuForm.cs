@@ -361,19 +361,22 @@ namespace PowerDocu.GUI
         {
             if (outputFormatComboBox != null && selectWordTemplateButton != null)
             {
-                if (
-                    outputFormatComboBox.SelectedItem.ToString().Equals(OutputFormatHelper.Word)
-                    || outputFormatComboBox.SelectedItem.ToString().Equals(OutputFormatHelper.All)
-                )
+                if(outputFormatComboBox.SelectedItem.ToString().Equals(OutputFormatHelper.Word)
+                    || outputFormatComboBox.SelectedItem.ToString().Equals(OutputFormatHelper.All))
                 {
                     selectWordTemplateButton.Enabled = true;
                     wordTemplateInfoLabel.ForeColor = Color.Black;
+                    addTableOfContentsCheckBox.Enabled = true;
+                    addTableOfContentsCheckBox.ForeColor = Color.Black;
                 }
                 else
                 {
                     selectWordTemplateButton.Enabled = false;
                     wordTemplateInfoLabel.ForeColor = Color.Gray;
+                    addTableOfContentsCheckBox.Enabled = false;
+                    addTableOfContentsCheckBox.ForeColor = Color.Gray;
                 }
+                
             }
         }
     }

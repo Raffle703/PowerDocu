@@ -32,10 +32,7 @@ namespace PowerDocu.SolutionDocumenter
 
         private void addSolutionMetadata()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.solution.UniqueName));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.solution.UniqueName, "Heading1");
             body.AppendChild(new Paragraph(new Run()));
             Table table = CreateTable();
             table.Append(CreateRow(new Text("Status"), new Text(content.solution.isManaged ? "Managed" : "Unmanaged")));
@@ -43,10 +40,7 @@ namespace PowerDocu.SolutionDocumenter
             table.Append(CreateRow(new Text("Publisher"), GetPublisherInfo()));
             table.Append(CreateRow(new Text("Documentation generated at"), new Text(PowerDocuReleaseHelper.GetTimestampWithVersion())));
             body.Append(table);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Statistics"));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading("Statistics", "Heading1");
             table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Component Type"), new Text("Number of Components")));
             if (content.solution.EnvironmentVariables.Count > 0)
@@ -158,18 +152,11 @@ namespace PowerDocu.SolutionDocumenter
 
         private void addEnvironmentVariables()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Environment Variables"));
-            ApplyStyleToParagraph("Heading2", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
+            AddHeading("Environment Variables", "Heading2");
+            body.AppendChild(new Paragraph());
             foreach (EnvironmentVariableEntity environmentVariable in content.solution.EnvironmentVariables.OrderBy(e => e.DisplayName))
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text(environmentVariable.DisplayName));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading(environmentVariable.DisplayName, "Heading3");
                 Table table = CreateTable();
                 table.Append(CreateHeaderRow(new Text("Property"), new Text("Value")));
                 table.Append(CreateRow(new Text("Internal Name"), new Text(environmentVariable.Name)));
@@ -181,19 +168,13 @@ namespace PowerDocu.SolutionDocumenter
                 //table.Append(CreateRow(new Text("IsCustomizable"), new Text(environmentVariable.IsCustomizable.ToString())));
                 //todo descriptions, localizednames
                 body.Append(table);
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
+                body.AppendChild(new Paragraph());
             }
         }
         private void addSolutionComponents()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Solution Components"));
-            ApplyStyleToParagraph("Heading1", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("This solution contains the following components"));
+            AddHeading("Solution Components", "Heading1");
+            body.AppendChild(new Paragraph(new Run(new Text("This solution contains the following components"))));
             addEnvironmentVariables();
             foreach (string componentType in content.solution.GetComponentTypes())
             {
@@ -212,10 +193,7 @@ namespace PowerDocu.SolutionDocumenter
                         renderOptionSets();
                         break;
                     default:
-                        para = body.AppendChild(new Paragraph());
-                        run = para.AppendChild(new Run());
-                        run.AppendChild(new Text(componentType));
-                        ApplyStyleToParagraph("Heading2", para);
+                        AddHeading(componentType, "Heading2");
                         List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
                         Table table = CreateTable();
                         table.Append(CreateHeaderRow(new Text(componentType)));
@@ -224,15 +202,13 @@ namespace PowerDocu.SolutionDocumenter
                             table.Append(CreateRow(new Text(content.GetDisplayNameForComponent(component))));
                         }
                         body.Append(table);
-                        para = body.AppendChild(new Paragraph());
-                        run = para.AppendChild(new Run());
+                        body.AppendChild(new Paragraph());
                         break;
                 }
             }
-            run.AppendChild(new Text("Solution Component Dependencies"));
-            ApplyStyleToParagraph("Heading1", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
+            AddHeading("Solution Component Dependencies", "Heading1");
+            Paragraph para = body.AppendChild(new Paragraph());
+            Run run = para.AppendChild(new Run());
             List<string> dependencies = content.solution.Dependencies
                 .GroupBy(p => p.Required.reqdepSolution)
                 .Select(g => g.First())
@@ -244,10 +220,7 @@ namespace PowerDocu.SolutionDocumenter
                 run.AppendChild(new Text("This solution has the following dependencies: "));
                 foreach (string solution in dependencies)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Solution: " + solution));
-                    ApplyStyleToParagraph("Heading2", para);
+                    AddHeading("Solution: " + solution, "Heading2");
                     foreach (SolutionDependency dependency in content.solution.Dependencies.Where(p => p.Required.reqdepSolution.Equals(solution)))
                     {
                         Table table = CreateTable();
@@ -282,16 +255,12 @@ namespace PowerDocu.SolutionDocumenter
 
         private void renderEntities()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Tables"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Tables", "Heading2");
+            Paragraph para;
+            Run run;
             foreach (TableEntity tableEntity in content.solution.Customizations.getEntities())
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run(new Text(tableEntity.getLocalizedName() + " (" + tableEntity.getName() + ")")));
-                //run.AppendChild(new Text(entity..Name + " (" + role.ID + ")"));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading(tableEntity.getLocalizedName() + " (" + tableEntity.getName() + ")", "Heading3");
                 Table table = CreateTable();
                 table.Append(CreateRow(new Text("Primary Column"), new Text(tableEntity.getPrimaryColumn())));
                 table.Append(CreateRow(new Text("Description"), new Text(tableEntity.getDescription())));
@@ -316,9 +285,7 @@ namespace PowerDocu.SolutionDocumenter
                         : tableEntity.GetColumns().Where(c => !c.isDefaultColumn()).ToList();
                     if (columns.Count > 0)
                     {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run(new Text("Columns")));
-                    ApplyStyleToParagraph("Heading4", para);
+                    AddHeading("Columns", "Heading4");
                     table = CreateTable();
                     table.Append(CreateHeaderRow(new Text("Display Name"),
                                                  new Text("Logical Name"),
@@ -343,9 +310,7 @@ namespace PowerDocu.SolutionDocumenter
                         string columnHeading = !String.IsNullOrEmpty(columnEntity.getDisplayName())
                             ? columnEntity.getDisplayName() + " (" + columnEntity.getLogicalName() + ")"
                             : columnEntity.getLogicalName();
-                        para = body.AppendChild(new Paragraph());
-                        run = para.AppendChild(new Run(new Text(columnHeading + primaryNameColumn)));
-                        ApplyStyleToParagraph("Heading5", para);
+                        AddHeading(columnHeading + primaryNameColumn, "Heading5");
                         table = CreateTable();
                         table.Append(CreateRow(new Text("Display Name"), new Text(columnEntity.getDisplayName())));
                         table.Append(CreateRow(new Text("Logical Name"), new Text(columnEntity.getLogicalName())));
@@ -367,9 +332,7 @@ namespace PowerDocu.SolutionDocumenter
 
                 if (tableEntity.GetForms().Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run(new Text("Forms")));
-                    ApplyStyleToParagraph("Heading4", para);
+                    AddHeading("Forms", "Heading4");
                     table = CreateTable();
                     table.Append(CreateHeaderRow(new Text("Name"),
                                                  new Text("Type"),
@@ -395,9 +358,7 @@ namespace PowerDocu.SolutionDocumenter
                         if (tabs.Count > 0)
                         {
                             string formTypeLabel = formEntity.GetFormTypeDisplayName();
-                            para = body.AppendChild(new Paragraph());
-                            run = para.AppendChild(new Run(new Text("Form (" + formTypeLabel + "): " + formEntity.GetFormName())));
-                            ApplyStyleToParagraph("Heading5", para);
+                            AddHeading("Form (" + formTypeLabel + "): " + formEntity.GetFormName(), "Heading5");
 
                             // SVG wireframe mockup
                             TableEntity currentTableEntity = content.solution.Customizations.getEntities().Find(e => e.GetForms().Contains(formEntity));
@@ -446,9 +407,7 @@ namespace PowerDocu.SolutionDocumenter
 
                 if (tableEntity.GetViews().Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run(new Text("Views")));
-                    ApplyStyleToParagraph("Heading4", para);
+                    AddHeading("Views", "Heading4");
                     table = CreateTable();
                     table.Append(CreateHeaderRow(new Text("Name"),
                                                  new Text("Type"),
@@ -472,9 +431,7 @@ namespace PowerDocu.SolutionDocumenter
                         List<ViewColumn> viewColumns = viewEntity.GetColumns();
                         if (viewColumns.Count > 0)
                         {
-                            para = body.AppendChild(new Paragraph());
-                            run = para.AppendChild(new Run(new Text("View: " + viewEntity.GetViewName())));
-                            ApplyStyleToParagraph("Heading5", para);
+                            AddHeading("View: " + viewEntity.GetViewName(), "Heading5");
                             table = CreateTable();
                             table.Append(CreateHeaderRow(new Text("#"), new Text("Column"), new Text("Width")));
                             foreach (ViewColumn vc in viewColumns)
@@ -511,10 +468,7 @@ namespace PowerDocu.SolutionDocumenter
                     }
                 }
             }
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Table Relationships"));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading("Table Relationships", "Heading3");
             ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
             int imageWidth, imageHeight;
             using (FileStream stream = new FileStream(content.folderPath + "dataverse.png", FileMode.Open))
@@ -541,23 +495,16 @@ namespace PowerDocu.SolutionDocumenter
 
         private void renderAIModels()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("AI Models"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("AI Models", "Heading2");
+            Paragraph para;
+            Run run;
             foreach (AIModel aiModel in content.solution.Customizations.getAIModels().OrderBy(o => o.getName()))
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run(new Text(aiModel.getName())));
-                ApplyStyleToParagraph("Heading3", para);
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run(new Text("Model")));
-                ApplyStyleToParagraph("Heading4", para);
+                AddHeading(aiModel.getName(), "Heading3");
+                AddHeading("Model", "Heading4");
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run(new Text("TODO Model details")));
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run(new Text("Instructions")));
-                ApplyStyleToParagraph("Heading4", para);
+                AddHeading("Instructions", "Heading4");
                 Table instructionsTable = CreateTable();
                 Paragraph paraTable = new Paragraph();
                 Run tableRun = paraTable.AppendChild(new Run());
@@ -575,9 +522,7 @@ namespace PowerDocu.SolutionDocumenter
                 List<AIModelInput> inputs = aiModel.getInputs().OrderBy(i => i.Text).ToList();
                 if (inputs.Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run(new Text("Inputs")));
-                    ApplyStyleToParagraph("Heading4", para);
+                    AddHeading("Inputs", "Heading4");
                     Table inputsTable = CreateTable();
                     inputsTable.Append(CreateHeaderRow(
                         new Text("Name"),
@@ -601,9 +546,7 @@ namespace PowerDocu.SolutionDocumenter
                 AIModelOutput output = aiModel.getOutput();
                 if (output != null)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run(new Text("Model response")));
-                    ApplyStyleToParagraph("Heading4", para); ;
+                    AddHeading("Model response", "Heading4");
                     Table outputTable = CreateTable();
                     outputTable.Append(CreateRow(new Text("Output Formats"), new Text(string.Join(", ", output.Formats))));
                     if (!String.IsNullOrEmpty(output.jsonSchema))
@@ -616,10 +559,7 @@ namespace PowerDocu.SolutionDocumenter
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
             }
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Table Relationships"));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading("Table Relationships", "Heading3");
             ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
             int imageWidth, imageHeight;
             using (FileStream stream = new FileStream(content.folderPath + "dataverse.png", FileMode.Open))
@@ -646,18 +586,15 @@ namespace PowerDocu.SolutionDocumenter
 
         private void renderOptionSets()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Option Sets"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Option Sets", "Heading2");
+            Paragraph para;
+            Run run;
             List<OptionSetEntity> optionSets = content.solution.Customizations.getOptionSets();
             if (optionSets.Count > 0)
             {
                 foreach (OptionSetEntity optionSet in optionSets)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run(new Text(optionSet.GetDisplayName() + " (" + optionSet.Name + ")")));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading(optionSet.GetDisplayName() + " (" + optionSet.Name + ")", "Heading3");
                     Table table = CreateTable();
                     table.Append(CreateRow(new Text("Type"), new Text(optionSet.OptionSetType)));
                     table.Append(CreateRow(new Text("Is Global"), new Text(optionSet.IsGlobal ? "Yes" : "No")));
@@ -689,16 +626,12 @@ namespace PowerDocu.SolutionDocumenter
 
         private void renderSecurityRoles()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Security Roles"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Security Roles", "Heading2");
+            Paragraph para;
+            Run run;
             foreach (RoleEntity role in content.solution.Customizations.getRoles())
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text(role.Name + " (" + role.ID + ")"));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading(role.Name + " (" + role.ID + ")", "Heading3");
                 Table table = CreateTable();
                 table.Append(CreateHeaderRow(new Text("Table"), new Text("Create"), new Text("Read"), new Text("Write"), new Text("Delete"), new Text("Append"), new Text("Append To"), new Text("Assign"), new Text("Share")));
                 foreach (TableAccess tableAccess in role.Tables.OrderBy(o => o.Name))

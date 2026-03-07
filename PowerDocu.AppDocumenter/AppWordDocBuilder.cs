@@ -51,10 +51,7 @@ namespace PowerDocu.AppDocumenter
 
         private void addAppProperties()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appProperties.header));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appProperties.header, "Heading1");
             body.AppendChild(new Paragraph(new Run()));
             Table table = CreateTable();
             table.Append(CreateRow(new Text("App Name"), new Text(content.Name)));
@@ -93,10 +90,7 @@ namespace PowerDocu.AppDocumenter
             table.Append(CreateRow(new Text(content.appProperties.headerAppStatistics), statisticsTable));
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appProperties.headerAppProperties));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appProperties.headerAppProperties, "Heading1");
             body.AppendChild(new Paragraph(new Run()));
             table = CreateTable();
             foreach (Expression property in content.appProperties.appProperties)
@@ -108,16 +102,10 @@ namespace PowerDocu.AppDocumenter
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appProperties.headerAppInfo));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appProperties.headerAppInfo, "Heading1");
             body.AppendChild(new Paragraph(new Run()));
             addAppControlsTable(content.appControls.controls.First<ControlEntity>(o => o.Type == "appinfo"));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appProperties.headerAppPreviewFlags));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appProperties.headerAppPreviewFlags, "Heading1");
             body.AppendChild(new Paragraph(new Run()));
             table = CreateTable();
             Expression appPreviewsFlagProperty = content.appProperties.appPreviewsFlagProperty;
@@ -134,15 +122,9 @@ namespace PowerDocu.AppDocumenter
 
         private void addAppVariablesInfo()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appVariablesInfo.header));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appVariablesInfo.header, "Heading1");
             body.AppendChild(new Paragraph(new Run(new Text(content.appVariablesInfo.infoText))));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appVariablesInfo.headerGlobalVariables));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.appVariablesInfo.headerGlobalVariables, "Heading2");
             Table table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Variable Name"), new Text("Used In")));
             foreach (string var in content.appVariablesInfo.globalVariables)
@@ -168,10 +150,7 @@ namespace PowerDocu.AppDocumenter
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appVariablesInfo.headerContextVariables));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.appVariablesInfo.headerContextVariables, "Heading2");
             table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Variable Name"), new Text("Used In")));
             foreach (string var in content.appVariablesInfo.contextVariables)
@@ -190,10 +169,7 @@ namespace PowerDocu.AppDocumenter
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appVariablesInfo.headerCollections));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.appVariablesInfo.headerCollections, "Heading2");
             table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Collection Name"), new Text("Used In")));
             foreach (string coll in content.appVariablesInfo.collections)
@@ -216,26 +192,17 @@ namespace PowerDocu.AppDocumenter
 
         private void addAppControlsOverview(WordprocessingDocument wordDoc)
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appControls.headerOverview));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appControls.headerOverview, "Heading1");
             body.AppendChild(new Paragraph(new Run(new Text(content.appControls.infoTextScreens))));
             body.AppendChild(new Paragraph(new Run(new Text(content.appControls.infoTextControls))));
             foreach (ControlEntity control in content.appControls.controls.Where(o => o.Type != "appinfo"))
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text("Screen: " + control.Name));
-                ApplyStyleToParagraph("Heading2", para);
+                AddHeading("Screen: " + control.Name, "Heading2");
                 AppendControlTree(control, 0);
                 body.AppendChild(new Paragraph(new Run(new Break())));
             }
             body.AppendChild(new Paragraph(new Run(new Break())));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appControls.headerScreenNavigation));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.appControls.headerScreenNavigation, "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(content.appControls.infoTextScreenNavigation))));
             ImagePart imagePart = wordDoc.MainDocumentPart.AddImagePart(ImagePartType.Png);
             int imageWidth, imageHeight;
@@ -307,20 +274,14 @@ namespace PowerDocu.AppDocumenter
             body = mainPart.Document.Body;
             PrepareDocument(!String.IsNullOrEmpty(template));
             // Metadata header
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appProperties.header));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appProperties.header, "Heading1");
             Table metaTable = CreateTable();
             metaTable.Append(CreateRow(new Text("App Name"), new Text(content.Name)));
             metaTable.Append(CreateRow(new Text(content.appProperties.headerDocumentationGenerated), new Text(PowerDocuReleaseHelper.GetTimestampWithVersion())));
             body.Append(metaTable);
             body.AppendChild(new Paragraph(new Run(new Break())));
             // Screen heading and controls
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(screen.Name));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(screen.Name, "Heading2");
             body.AppendChild(new Paragraph(new Run()));
             addAppControlsTable(screen);
             foreach (ControlEntity control in content
@@ -330,10 +291,7 @@ namespace PowerDocu.AppDocumenter
                 .OrderBy(o => o.Name)
                 .ToList())
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text(control.Name));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading(control.Name, "Heading3");
                 body.AppendChild(new Paragraph(new Run()));
                 addAppControlsTable(control);
             }
@@ -481,19 +439,13 @@ namespace PowerDocu.AppDocumenter
 
         private void addAppDataSources()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appDataSources.header));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appDataSources.header, "Heading1");
             body.AppendChild(new Paragraph(new Run(new Text(content.appDataSources.infoText))));
             foreach (DataSource datasource in content.appDataSources.dataSources)
             {
                 if (!datasource.isSampleDataSource() || documentSampleData)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text(datasource.Name));
-                    ApplyStyleToParagraph("Heading2", para);
+                    AddHeading(datasource.Name, "Heading2");
                     body.AppendChild(new Paragraph(new Run()));
                     Table table = CreateTable();
                     table.Append(CreateRow(new Text("Name"), new Text(datasource.Name)));
@@ -545,19 +497,13 @@ namespace PowerDocu.AppDocumenter
 
         private void addAppResources()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appResources.header));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appResources.header, "Heading1");
             body.AppendChild(new Paragraph(new Run(new Text(content.appResources.infoText))));
             foreach (Resource resource in content.appResources.resources)
             {
                 if (!resource.isSampleResource())
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text(resource.Name));
-                    ApplyStyleToParagraph("Heading2", para);
+                    AddHeading(resource.Name, "Heading2");
                     body.AppendChild(new Paragraph(new Run()));
                     Table table = CreateTable();
                     table.Append(CreateRow(new Text("Name"), new Text(resource.Name)));

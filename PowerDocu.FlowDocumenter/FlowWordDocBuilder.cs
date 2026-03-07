@@ -39,21 +39,15 @@ namespace PowerDocu.FlowDocumenter
 
         private void addConnectionReferenceInfo()
         {
+            AddHeading(content.connectionReferences.header, "Heading2");
             Paragraph para = body.AppendChild(new Paragraph());
             Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.connectionReferences.header));
-            ApplyStyleToParagraph("Heading2", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
             run.AppendChild(new Text(content.connectionReferences.infoText));
             foreach (KeyValuePair<string, Dictionary<string, string>> kvp in content.connectionReferences.connectionTable)
             {
                 string connectorUniqueName = kvp.Key;
                 ConnectorIcon connectorIcon = ConnectorHelper.getConnectorIcon(connectorUniqueName);
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text((connectorIcon != null) ? connectorIcon.Name : connectorUniqueName));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading((connectorIcon != null) ? connectorIcon.Name : connectorUniqueName, "Heading3");
 
                 var rel = mainPart.AddHyperlinkRelationship(new Uri("https://docs.microsoft.com/connectors/" + connectorUniqueName), true);
                 Table table = CreateTable();
@@ -105,10 +99,7 @@ namespace PowerDocu.FlowDocumenter
 
         private void addFlowMetadata()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.metadata.header));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.metadata.header, "Heading1");
             body.AppendChild(new Paragraph(new Run()));
             Table table = CreateTable();
             foreach (KeyValuePair<string, string> kvp in content.metadata.metadataTable)
@@ -121,24 +112,17 @@ namespace PowerDocu.FlowDocumenter
 
         private void addVariablesInfo()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.variables.header));
-            ApplyStyleToParagraph("Heading2", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            para = body.AppendChild(new Paragraph());
+            AddHeading(content.variables.header, "Heading2");
+            body.AppendChild(new Paragraph(new Run()));
+            body.AppendChild(new Paragraph());
 
             foreach (KeyValuePair<string, Dictionary<string, string>> kvp in content.variables.variablesTable)
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text(kvp.Key));
+                Paragraph para = AddHeading(kvp.Key, "Heading3");
                 string bookmarkID = (new Random()).Next(100000, 999999).ToString();
                 BookmarkStart start = new BookmarkStart() { Name = CreateMD5Hash(kvp.Key), Id = bookmarkID };
                 BookmarkEnd end = new BookmarkEnd() { Id = bookmarkID };
                 para.Append(start, end);
-                ApplyStyleToParagraph("Heading3", para);
 
                 Table table = CreateTable();
                 foreach (KeyValuePair<string, string> kvp2 in kvp.Value)
@@ -163,7 +147,7 @@ namespace PowerDocu.FlowDocumenter
                 {
                     var tr = new TableRow();
                     var tc = CreateTableCell();
-                    run = CreateBoldRun("Used in these Actions");
+                    Run run = CreateBoldRun("Used in these Actions");
                     tc.Append(new Paragraph(run));
                     tr.Append(tc);
                     tc = CreateTableCell();
@@ -185,10 +169,7 @@ namespace PowerDocu.FlowDocumenter
 
         private void addTriggerInfo()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.trigger.header));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.trigger.header, "Heading2");
             body.AppendChild(new Paragraph(new Run()));
             Table table = CreateTable();
             foreach (KeyValuePair<string, string> kvp in content.trigger.triggerTable)
@@ -217,13 +198,8 @@ namespace PowerDocu.FlowDocumenter
 
         private void addFlowOverview(WordprocessingDocument wordDoc)
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Flow Overview"));
-            ApplyStyleToParagraph("Heading2", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("The following chart shows the top level layout of the Flow. For a detailed view, please visit the section called Detailed Flow Diagram"));
+            AddHeading("Flow Overview", "Heading2");
+            body.AppendChild(new Paragraph(new Run(new Text("The following chart shows the top level layout of the Flow. For a detailed view, please visit the section called Detailed Flow Diagram"))));
             //we generated a png and a svg file. We use both: SVG as the default, PNG as the fallback for older clients that can't display SVG
             ImagePart imagePart = wordDoc.MainDocumentPart.AddImagePart(ImagePartType.Png);
             int imageWidth, imageHeight;
@@ -251,23 +227,15 @@ namespace PowerDocu.FlowDocumenter
         private void addActionInfo()
         {
             List<ActionNode> actionNodesList = content.actions.actionNodesList;
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Actions"));
-            ApplyStyleToParagraph("Heading2", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text($"There are a total of {actionNodesList.Count} actions used in this Flow:"));
+            AddHeading("Actions", "Heading2");
+            body.AppendChild(new Paragraph(new Run(new Text($"There are a total of {actionNodesList.Count} actions used in this Flow:"))));
             foreach (ActionNode action in actionNodesList)
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text(action.Name));
+                Paragraph para = AddHeading(action.Name, "Heading3");
                 string bookmarkID = (new Random()).Next(100000, 999999).ToString();
                 BookmarkStart start = new BookmarkStart() { Name = CreateMD5Hash(action.Name), Id = bookmarkID };
                 BookmarkEnd end = new BookmarkEnd() { Id = bookmarkID };
                 para.Append(start, end);
-                ApplyStyleToParagraph("Heading3", para);
 
                 Table actionDetailsTable = CreateTable();
                 actionDetailsTable.Append(CreateRow(new Text("Name"), new Text(action.Name)));
@@ -378,7 +346,7 @@ namespace PowerDocu.FlowDocumenter
                     {
                         var tr = new TableRow();
                         var tc = CreateTableCell();
-                        run = CreateBoldRun(action.Type == "Switch" ? "Switch Actions" : "Subactions");
+                        Run run = CreateBoldRun(action.Type == "Switch" ? "Switch Actions" : "Subactions");
                         tc.Append(new Paragraph(run));
                         tr.Append(tc);
                         tc = CreateTableCell();
@@ -418,7 +386,7 @@ namespace PowerDocu.FlowDocumenter
                     {
                         var tr = new TableRow();
                         var tc = CreateTableCell();
-                        run = CreateBoldRun("Elseactions");
+                        Run run = CreateBoldRun("Elseactions");
                         tc.Append(new Paragraph(run));
                         tr.Append(tc);
                         tc = CreateTableCell();
@@ -439,7 +407,7 @@ namespace PowerDocu.FlowDocumenter
                 {
                     var tr = new TableRow();
                     var tc = CreateTableCell();
-                    run = CreateBoldRun("Next Action(s) Conditions");
+                    Run run = CreateBoldRun("Next Action(s) Conditions");
                     tc.Append(new Paragraph(run));
                     tr.Append(tc);
                     tc = CreateTableCell();
@@ -465,13 +433,8 @@ namespace PowerDocu.FlowDocumenter
 
         private void addFlowDetails(WordprocessingDocument wordDoc)
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Detailed Flow Diagram"));
-            ApplyStyleToParagraph("Heading2", para);
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("The following chart shows the detailed layout of the Flow"));
+            AddHeading("Detailed Flow Diagram", "Heading2");
+            body.AppendChild(new Paragraph(new Run(new Text("The following chart shows the detailed layout of the Flow"))));
 
             //We add both the SVG and the PNG here. Modern clients (Office 2016 onwards?) can display the SVG. Others should use PNG as fallback
             ImagePart imagePart = wordDoc.MainDocumentPart.AddImagePart(ImagePartType.Png);

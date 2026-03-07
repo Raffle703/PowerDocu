@@ -38,10 +38,7 @@ namespace PowerDocu.AgentDocumenter
 
         private void addAgentOverview()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Agent - " + content.filename));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading("Agent - " + content.filename, "Heading1");
 
             Table table = CreateTable();
             table.Append(CreateRow(new Text("Agent Name"), new Text(content.agent.Name)));
@@ -68,44 +65,26 @@ namespace PowerDocu.AgentDocumenter
             body.AppendChild(new Paragraph(new Run(new Break())));
 
             // Details section
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Details));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.Details, "Heading2");
 
             // Description
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Description));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Description, "Heading3");
             body.AppendChild(new Paragraph(CreateRunWithLinebreaks(content.agent.GetDescription() ?? "")));
 
             // Orchestration
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Orchestration));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Orchestration, "Heading3");
             body.AppendChild(new Paragraph(new Run(new Text($"{content.OrchestrationText} - {content.agent.GetOrchestration()}"))));
 
             // Response Model
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.ResponseModel));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.ResponseModel, "Heading3");
             body.AppendChild(new Paragraph(new Run(new Text(content.agent.GetResponseModel()))));
 
             // Instructions
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Instructions));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Instructions, "Heading3");
             body.AppendChild(new Paragraph(CreateRunWithLinebreaks(content.agent.GetInstructions() ?? "")));
 
             // Knowledge
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Knowledge));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Knowledge, "Heading3");
             var knowledgeSources = content.agent.GetKnowledge();
             var fileKnowledge = content.agent.GetFileKnowledge();
             if (knowledgeSources.Count > 0 || fileKnowledge.Count > 0)
@@ -130,10 +109,7 @@ namespace PowerDocu.AgentDocumenter
             }
 
             // Tools
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Tools));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Tools, "Heading3");
             var overviewTools = content.agent.GetAllToolInfos();
             if (overviewTools.Count > 0)
             {
@@ -148,10 +124,7 @@ namespace PowerDocu.AgentDocumenter
             }
 
             // Triggers
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Triggers));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Triggers, "Heading3");
             var triggers = content.agent.GetTriggers();
             if (triggers.Count > 0)
             {
@@ -168,27 +141,18 @@ namespace PowerDocu.AgentDocumenter
             }
 
             // Agents
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Agents));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Agents, "Heading3");
             body.AppendChild(new Paragraph(new Run(new Text("Sub-agents are not available in the solution export."))));
 
             // Topics
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Topics));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.Topics, "Heading3");
             foreach (BotComponent topic in content.agent.GetTopics().OrderBy(o => o.Name))
             {
                 body.AppendChild(new Paragraph(new Run(new Text(topic.Name))));
             }
 
             // Suggested Prompts
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.SuggestedPrompts));
-            ApplyStyleToParagraph("Heading3", para);
+            AddHeading(content.SuggestedPrompts, "Heading3");
             body.AppendChild(new Paragraph(new Run(new Text(content.SuggestedPromptsText))));
             Dictionary<string, string> conversationStarters = content.agent.GetSuggestedPrompts();
             if (conversationStarters.Count > 0)
@@ -210,10 +174,7 @@ namespace PowerDocu.AgentDocumenter
             var fileKnowledge = content.agent.GetFileKnowledge();
             if (knowledgeSources.Count == 0 && fileKnowledge.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Knowledge));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.Knowledge, "Heading1");
 
             // Overview table
             Table overviewTable = CreateTable();
@@ -245,10 +206,7 @@ namespace PowerDocu.AgentDocumenter
 
         private void addKnowledgeSourceDetail(BotComponent knowledge)
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(knowledge.Name));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(knowledge.Name, "Heading2");
 
             // Properties table
             Table table = CreateTable();
@@ -276,10 +234,7 @@ namespace PowerDocu.AgentDocumenter
             // Description
             if (!string.IsNullOrEmpty(knowledge.Description))
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text("Description"));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading("Description", "Heading3");
                 body.AppendChild(new Paragraph(CreateRunWithLinebreaks(knowledge.Description)));
             }
 
@@ -289,10 +244,7 @@ namespace PowerDocu.AgentDocumenter
                 var tables = content.agent.GetDataverseTablesForKnowledge(knowledge);
                 if (tables.Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Selected Tables"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Selected Tables", "Heading3");
 
                     Table tablesTable = CreateTable();
                     tablesTable.Append(CreateHeaderRow(new Text("Table Name"), new Text("Logical Name")));
@@ -309,10 +261,7 @@ namespace PowerDocu.AgentDocumenter
                         var synonyms = content.agent.GetSynonymsForEntity(dvTable);
                         if (synonyms.Count > 0)
                         {
-                            para = body.AppendChild(new Paragraph());
-                            run = para.AppendChild(new Run());
-                            run.AppendChild(new Text($"Glossary: {dvTable.Name}"));
-                            ApplyStyleToParagraph("Heading3", para);
+                            AddHeading($"Glossary: {dvTable.Name}", "Heading3");
 
                             Table synTable = CreateTable();
                             synTable.Append(CreateHeaderRow(new Text("Column"), new Text("Description")));
@@ -330,10 +279,7 @@ namespace PowerDocu.AgentDocumenter
 
         private void addAgentTopicsOverview()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Topics));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.Topics, "Heading1");
 
             Table table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Name"), new Text("Type"), new Text("Trigger"), new Text("Kind")));
@@ -352,10 +298,7 @@ namespace PowerDocu.AgentDocumenter
         {
             foreach (BotComponent topic in content.agent.GetTopics().OrderBy(o => o.Name).ToList())
             {
-                Paragraph para = body.AppendChild(new Paragraph());
-                Run run = para.AppendChild(new Run());
-                run.AppendChild(new Text("Topic: " + topic.Name));
-                ApplyStyleToParagraph("Heading2", para);
+                AddHeading("Topic: " + topic.Name, "Heading2");
 
                 // Metadata table
                 Table table = CreateTable();
@@ -384,10 +327,7 @@ namespace PowerDocu.AgentDocumenter
                 List<string> triggerQueries = topic.GetTriggerQueries();
                 if (triggerQueries.Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Trigger Queries"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Trigger Queries", "Heading3");
 
                     Table triggerTable = CreateTable();
                     triggerTable.Append(CreateHeaderRow(new Text("Query")));
@@ -403,10 +343,7 @@ namespace PowerDocu.AgentDocumenter
                 if (topic.GetTopicKind() == "KnowledgeSourceConfiguration")
                 {
                     var (sourceKind, skillConfig) = topic.GetKnowledgeSourceDetails();
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Knowledge Source"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Knowledge Source", "Heading3");
 
                     Table ksTable = CreateTable();
                     if (!string.IsNullOrEmpty(sourceKind))
@@ -421,10 +358,7 @@ namespace PowerDocu.AgentDocumenter
                 var variables = topic.GetTopicVariables();
                 if (variables.Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Variables"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Variables", "Heading3");
 
                     Table varTable = CreateTable();
                     varTable.Append(CreateHeaderRow(new Text("Variable"), new Text("Context")));
@@ -441,10 +375,7 @@ namespace PowerDocu.AgentDocumenter
                 string graphFilePath = Path.Combine(content.folderPath, "Topics", graphFile);
                 if (File.Exists(graphFilePath))
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Topic Flow"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Topic Flow", "Heading3");
 
                     try
                     {
@@ -471,10 +402,7 @@ namespace PowerDocu.AgentDocumenter
         }
         private void addAgentTools()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Tools));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.Tools, "Heading1");
 
             var tools = content.agent.GetAllToolInfos();
             if (tools.Count == 0)
@@ -501,10 +429,7 @@ namespace PowerDocu.AgentDocumenter
             // Detail per tool
             foreach (AgentToolInfo tool in tools)
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text("Tool: " + tool.Name));
-                ApplyStyleToParagraph("Heading2", para);
+                AddHeading("Tool: " + tool.Name, "Heading2");
 
                 // Details table
                 Table table = CreateTable();
@@ -531,10 +456,7 @@ namespace PowerDocu.AgentDocumenter
                 // Inputs
                 if (tool.Inputs.Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Inputs"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Inputs", "Heading3");
 
                     Table inputTable = CreateTable();
                     inputTable.Append(CreateHeaderRow(new Text("Input name"), new Text("Fill using"), new Text("Type"), new Text("Description")));
@@ -553,10 +475,7 @@ namespace PowerDocu.AgentDocumenter
                 // Outputs
                 if (tool.Outputs.Count > 0)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Outputs"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Outputs", "Heading3");
 
                     Table outputTable = CreateTable();
                     outputTable.Append(CreateHeaderRow(new Text("Output name"), new Text("Type"), new Text("Description")));
@@ -574,10 +493,7 @@ namespace PowerDocu.AgentDocumenter
                 // Completion
                 if (!string.IsNullOrEmpty(tool.ResponseActivity) || !string.IsNullOrEmpty(tool.OutputMode))
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Completion"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Completion", "Heading3");
 
                     Table completionTable = CreateTable();
                     if (!string.IsNullOrEmpty(tool.ResponseActivity))
@@ -590,10 +506,7 @@ namespace PowerDocu.AgentDocumenter
 
                     if (!string.IsNullOrEmpty(tool.ResponseActivity))
                     {
-                        para = body.AppendChild(new Paragraph());
-                        run = para.AppendChild(new Run());
-                        run.AppendChild(new Text("Message to display:"));
-                        ApplyStyleToParagraph("Heading4", para);
+                        AddHeading("Message to display:", "Heading4");
                         body.AppendChild(new Paragraph(new Run(new Text(tool.ResponseActivity))));
                     }
                     body.AppendChild(new Paragraph(new Run(new Break())));
@@ -602,10 +515,7 @@ namespace PowerDocu.AgentDocumenter
                 // Prompt text (for prompt tools)
                 if (!string.IsNullOrEmpty(tool.PromptText))
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text("Prompt"));
-                    ApplyStyleToParagraph("Heading3", para);
+                    AddHeading("Prompt", "Heading3");
                     body.AppendChild(new Paragraph(new Run(new Text(tool.PromptText))));
                     body.AppendChild(new Paragraph(new Run(new Break())));
                 }
@@ -617,17 +527,11 @@ namespace PowerDocu.AgentDocumenter
             var entities = content.agent.GetEntities();
             if (entities.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Entities));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.Entities, "Heading1");
 
             foreach (BotComponent entity in entities.OrderBy(e => e.Name))
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text("Entity: " + entity.Name));
-                ApplyStyleToParagraph("Heading2", para);
+                AddHeading("Entity: " + entity.Name, "Heading2");
 
                 string entityKind = entity.GetTopicKind();
                 Table table = CreateTable();
@@ -650,10 +554,7 @@ namespace PowerDocu.AgentDocumenter
                     var items = entity.GetEntityItems();
                     if (items.Count > 0)
                     {
-                        para = body.AppendChild(new Paragraph());
-                        run = para.AppendChild(new Run());
-                        run.AppendChild(new Text("Items"));
-                        ApplyStyleToParagraph("Heading3", para);
+                        AddHeading("Items", "Heading3");
 
                         Table itemsTable = CreateTable();
                         itemsTable.Append(CreateHeaderRow(new Text("Display Name"), new Text("ID")));
@@ -673,10 +574,7 @@ namespace PowerDocu.AgentDocumenter
             var variables = content.agent.GetVariables();
             if (variables.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.Variables));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.Variables, "Heading1");
 
             Table table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Name"), new Text("Scope"), new Text("Data Type"), new Text("AI Visibility"), new Text("External Init")));
@@ -696,14 +594,9 @@ namespace PowerDocu.AgentDocumenter
 
         private void addAgentChannels()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Channels"));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading("Channels", "Heading1");
 
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Channels are not exported with the solution and are not documented automatically."));
+            body.AppendChild(new Paragraph(new Run(new Text("Channels are not exported with the solution and are not documented automatically."))));
         }
 
         private static readonly string NotInExportMessage = "This setting is not available in the solution export.";
@@ -713,16 +606,10 @@ namespace PowerDocu.AgentDocumenter
             var config = content.agent.Configuration;
             var ai = config?.aISettings;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Settings"));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading("Settings", "Heading1");
 
             // Generative AI
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Generative AI"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Generative AI", "Heading2");
 
             Table genAiTable = CreateTable();
             genAiTable.Append(CreateHeaderRow(new Text("Setting"), new Text("Value")));
@@ -736,10 +623,7 @@ namespace PowerDocu.AgentDocumenter
             body.AppendChild(new Paragraph(new Run(new Break())));
 
             // Security
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Security"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Security", "Heading2");
 
             Table secTable = CreateTable();
             secTable.Append(CreateHeaderRow(new Text("Setting"), new Text("Value")));
@@ -749,45 +633,27 @@ namespace PowerDocu.AgentDocumenter
             body.AppendChild(new Paragraph(new Run(new Break())));
 
             // Connection settings
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Connection settings"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Connection settings", "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(NotInExportMessage))));
 
             // Authoring canvas
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Authoring canvas"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Authoring canvas", "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(NotInExportMessage))));
 
             // Entities
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Entities"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Entities", "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(NotInExportMessage))));
 
             // Skills
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Skills"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Skills", "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(NotInExportMessage))));
 
             // Voice
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Voice"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Voice", "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(NotInExportMessage))));
 
             // Languages
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Languages"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Languages", "Heading2");
 
             Table langTable = CreateTable();
             langTable.Append(CreateHeaderRow(new Text("Setting"), new Text("Value")));
@@ -796,10 +662,7 @@ namespace PowerDocu.AgentDocumenter
             body.AppendChild(new Paragraph(new Run(new Break())));
 
             // Language understanding
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Language understanding"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Language understanding", "Heading2");
 
             Table luTable = CreateTable();
             luTable.Append(CreateHeaderRow(new Text("Setting"), new Text("Value")));
@@ -808,17 +671,11 @@ namespace PowerDocu.AgentDocumenter
             body.AppendChild(new Paragraph(new Run(new Break())));
 
             // Component collections
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Component collections"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Component collections", "Heading2");
             body.AppendChild(new Paragraph(new Run(new Text(NotInExportMessage))));
 
             // Advanced
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
-            run.AppendChild(new Text("Advanced"));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading("Advanced", "Heading2");
 
             Table advTable = CreateTable();
             advTable.Append(CreateHeaderRow(new Text("Setting"), new Text("Value")));

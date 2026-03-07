@@ -37,10 +37,7 @@ namespace PowerDocu.AppModuleDocumenter
 
         private void addOverview()
         {
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appModule.GetDisplayName()));
-            ApplyStyleToParagraph("Heading1", para);
+            AddHeading(content.appModule.GetDisplayName(), "Heading1");
             body.AppendChild(new Paragraph(new Run()));
 
             Table table = CreateTable();
@@ -59,10 +56,7 @@ namespace PowerDocu.AppModuleDocumenter
             // Descriptions in all languages
             if (content.appModule.Descriptions.Count > 1)
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text("Descriptions"));
-                ApplyStyleToParagraph("Heading2", para);
+                AddHeading("Descriptions", "Heading2");
                 body.AppendChild(new Paragraph(new Run()));
 
                 table = CreateTable();
@@ -80,10 +74,7 @@ namespace PowerDocu.AppModuleDocumenter
         {
             if (content.appModule.SecurityRoleIds.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.headerSecurityRoles));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.headerSecurityRoles, "Heading2");
             body.AppendChild(new Paragraph(new Run(
                 new Text($"This app has {content.appModule.SecurityRoleIds.Count} security role(s) assigned."))));
 
@@ -102,10 +93,7 @@ namespace PowerDocu.AppModuleDocumenter
         {
             if (content.appModule.SiteMap == null) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.headerNavigation));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.headerNavigation, "Heading2");
             body.AppendChild(new Paragraph(new Run()));
 
             var siteMap = content.appModule.SiteMap;
@@ -130,17 +118,11 @@ namespace PowerDocu.AppModuleDocumenter
             // Areas > Groups > SubAreas
             foreach (var area in siteMap.Areas)
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text($"Area: {area.Title}"));
-                ApplyStyleToParagraph("Heading3", para);
+                AddHeading($"Area: {area.Title}", "Heading3");
 
                 foreach (var group in area.Groups)
                 {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text($"Group: {group.Title}"));
-                    ApplyStyleToParagraph("Heading4", para);
+                    AddHeading($"Group: {group.Title}", "Heading4");
 
                     if (group.SubAreas.Count > 0)
                     {
@@ -164,10 +146,7 @@ namespace PowerDocu.AppModuleDocumenter
             var tables = content.appModule.GetTables();
             if (tables.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.headerTables));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.headerTables, "Heading2");
             body.AppendChild(new Paragraph(new Run(
                 new Text($"This app includes {tables.Count} table(s)."))));
 
@@ -187,10 +166,7 @@ namespace PowerDocu.AppModuleDocumenter
             var views = content.appModule.GetViews();
             if (views.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.headerViews));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.headerViews, "Heading2");
             body.AppendChild(new Paragraph(new Run(
                 new Text($"This app includes {views.Count} view(s)."))));
 
@@ -210,10 +186,7 @@ namespace PowerDocu.AppModuleDocumenter
             var customPages = content.appModule.GetCustomPages();
             if (customPages.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.headerCustomPages));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.headerCustomPages, "Heading2");
             body.AppendChild(new Paragraph(new Run(
                 new Text($"This app includes {customPages.Count} custom page(s) (embedded canvas apps)."))));
 
@@ -231,10 +204,7 @@ namespace PowerDocu.AppModuleDocumenter
         {
             if (content.appModule.AppSettings.Count == 0) return;
 
-            Paragraph para = body.AppendChild(new Paragraph());
-            Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.headerAppSettings));
-            ApplyStyleToParagraph("Heading2", para);
+            AddHeading(content.headerAppSettings, "Heading2");
             body.AppendChild(new Paragraph(new Run()));
 
             Table table = CreateTable();

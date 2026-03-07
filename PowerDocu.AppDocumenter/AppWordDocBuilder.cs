@@ -14,10 +14,10 @@ namespace PowerDocu.AppDocumenter
     class AppWordDocBuilder : WordDocBuilder
     {
         private readonly AppDocumentationContent content;
-        private bool DetailedDocumentation = false;
         private bool documentChangedDefaultsOnly;
         private bool showDefaults;
         private bool documentSampleData;
+        private string template;
 
         public AppWordDocBuilder(AppDocumentationContent contentDocumentation, string template, bool documentChangedDefaultsOnly = false, bool showDefaults = true, bool documentSampleData = false, bool addTableOfContents = false)
         {
@@ -25,11 +25,12 @@ namespace PowerDocu.AppDocumenter
             this.documentChangedDefaultsOnly = documentChangedDefaultsOnly;
             this.showDefaults = showDefaults;
             this.documentSampleData = documentSampleData;
+            this.template = template;
             Directory.CreateDirectory(content.folderPath);
-            do
+            // Main document: everything except detailed controls
+            string filename = InitializeWordDocument(content.folderPath + content.filename, template);
+            using (WordprocessingDocument wordDocument = WordprocessingDocument.Open(filename, true))
             {
-                string filename = InitializeWordDocument(content.folderPath + content.filename + (DetailedDocumentation ? " detailed" : ""), template);
-                using WordprocessingDocument wordDocument = WordprocessingDocument.Open(filename, true);
                 mainPart = wordDocument.MainDocumentPart;
                 body = mainPart.Document.Body;
                 PrepareDocument(!String.IsNullOrEmpty(template));
@@ -39,9 +40,12 @@ namespace PowerDocu.AppDocumenter
                 addAppDataSources();
                 addAppResources();
                 addAppControlsOverview(wordDocument);
-                if (DetailedDocumentation) addDetailedAppControls();
-                DetailedDocumentation = !DetailedDocumentation;
-            } while (DetailedDocumentation);
+            }
+            // Per-screen documents: detailed controls for each screen
+            foreach (ControlEntity screen in content.appControls.controls.Where(o => o.Type == "screen").OrderBy(o => o.Name).ToList())
+            {
+                addScreenDocument(screen);
+            }
             NotificationHelper.SendNotification("Created Word documentation for " + contentDocumentation.Name);
         }
 
@@ -97,7 +101,7 @@ namespace PowerDocu.AppDocumenter
             table = CreateTable();
             foreach (Expression property in content.appProperties.appProperties)
             {
-                if (!content.appProperties.propertiesToSkip.Contains(property.expressionOperator) && (content.appProperties.OverviewProperties.Contains(property.expressionOperator) || DetailedDocumentation))
+                if (!content.appProperties.propertiesToSkip.Contains(property.expressionOperator))
                 {
                     AddExpressionTable(property, table, 1, false, true);
                 }
@@ -110,25 +114,22 @@ namespace PowerDocu.AppDocumenter
             ApplyStyleToParagraph("Heading1", para);
             body.AppendChild(new Paragraph(new Run()));
             addAppControlsTable(content.appControls.controls.First<ControlEntity>(o => o.Type == "appinfo"));
-            if (DetailedDocumentation)
+            para = body.AppendChild(new Paragraph());
+            run = para.AppendChild(new Run());
+            run.AppendChild(new Text(content.appProperties.headerAppPreviewFlags));
+            ApplyStyleToParagraph("Heading1", para);
+            body.AppendChild(new Paragraph(new Run()));
+            table = CreateTable();
+            Expression appPreviewsFlagProperty = content.appProperties.appPreviewsFlagProperty;
+            if (appPreviewsFlagProperty != null)
             {
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
-                run.AppendChild(new Text(content.appProperties.headerAppPreviewFlags));
-                ApplyStyleToParagraph("Heading1", para);
-                body.AppendChild(new Paragraph(new Run()));
-                table = CreateTable();
-                Expression appPreviewsFlagProperty = content.appProperties.appPreviewsFlagProperty;
-                if (appPreviewsFlagProperty != null)
+                foreach (Expression flagProp in appPreviewsFlagProperty.expressionOperands)
                 {
-                    foreach (Expression flagProp in appPreviewsFlagProperty.expressionOperands)
-                    {
-                        AddExpressionTable(flagProp, table, 1, false, true);
-                    }
+                    AddExpressionTable(flagProp, table, 1, false, true);
                 }
-                body.Append(table);
-                body.AppendChild(new Paragraph(new Run(new Break())));
             }
+            body.Append(table);
+            body.AppendChild(new Paragraph(new Run(new Break())));
         }
 
         private void addAppVariablesInfo()
@@ -225,18 +226,7 @@ namespace PowerDocu.AppDocumenter
             {
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
-                if (DetailedDocumentation)
-                {
-                    run.AppendChild(new Hyperlink(new Text("Screen: " + control.Name))
-                    {
-                        Anchor = CreateMD5Hash(control.Name),
-                        DocLocation = ""
-                    });
-                }
-                else
-                {
-                    run.AppendChild(new Text("Screen: " + control.Name));
-                }
+                run.AppendChild(new Text("Screen: " + control.Name));
                 ApplyStyleToParagraph("Heading2", para);
                 AppendControlTree(control, 0);
                 body.AppendChild(new Paragraph(new Run(new Break())));
@@ -297,18 +287,7 @@ namespace PowerDocu.AppDocumenter
             para.Append(new Run(new Text(" ") { Space = SpaceProcessingModeValues.Preserve }));
 
             // Control name + type 
-            if (DetailedDocumentation)
-            {
-                para.Append(new Hyperlink(new Run(new Text(control.Name + " [" + controlType + "]")))
-                {
-                    Anchor = CreateMD5Hash(control.Name),
-                    DocLocation = ""
-                });
-            }
-            else
-            {
-                para.Append(new Run(new Text(control.Name + " [" + controlType + "]")));
-            }
+            para.Append(new Run(new Text(control.Name + " [" + controlType + "]")));
 
             body.AppendChild(para);
 
@@ -319,43 +298,44 @@ namespace PowerDocu.AppDocumenter
             }
         }
 
-        private void addDetailedAppControls()
+        private void addScreenDocument(ControlEntity screen)
         {
+            string screenFileName = content.folderPath + content.filename + " - " + CharsetHelper.GetSafeName(screen.Name) + " Screen";
+            string filename = InitializeWordDocument(screenFileName, template);
+            using WordprocessingDocument wordDocument = WordprocessingDocument.Open(filename, true);
+            mainPart = wordDocument.MainDocumentPart;
+            body = mainPart.Document.Body;
+            PrepareDocument(!String.IsNullOrEmpty(template));
+            // Metadata header
             Paragraph para = body.AppendChild(new Paragraph());
             Run run = para.AppendChild(new Run());
-            run.AppendChild(new Text(content.appControls.headerDetails));
+            run.AppendChild(new Text(content.appProperties.header));
             ApplyStyleToParagraph("Heading1", para);
-            foreach (ControlEntity screen in content.appControls.controls.Where(o => o.Type == "screen").OrderBy(o => o.Name).ToList())
+            Table metaTable = CreateTable();
+            metaTable.Append(CreateRow(new Text("App Name"), new Text(content.Name)));
+            metaTable.Append(CreateRow(new Text(content.appProperties.headerDocumentationGenerated), new Text(PowerDocuReleaseHelper.GetTimestampWithVersion())));
+            body.Append(metaTable);
+            body.AppendChild(new Paragraph(new Run(new Break())));
+            // Screen heading and controls
+            para = body.AppendChild(new Paragraph());
+            run = para.AppendChild(new Run());
+            run.AppendChild(new Text(screen.Name));
+            ApplyStyleToParagraph("Heading2", para);
+            body.AppendChild(new Paragraph(new Run()));
+            addAppControlsTable(screen);
+            foreach (ControlEntity control in content
+                .appControls
+                .allControls
+                .Where(o => o.Type != "appinfo" && o.Type != "screen" && screen.Equals(o.Screen()))
+                .OrderBy(o => o.Name)
+                .ToList())
             {
                 para = body.AppendChild(new Paragraph());
                 run = para.AppendChild(new Run());
-                run.AppendChild(new Text(screen.Name));
-                string bookmarkID = (new Random()).Next(100000, 999999).ToString();
-                BookmarkStart start = new BookmarkStart() { Name = CreateMD5Hash(screen.Name), Id = bookmarkID };
-                BookmarkEnd end = new BookmarkEnd() { Id = bookmarkID };
-                para.Append(start, end);
-                ApplyStyleToParagraph("Heading2", para);
+                run.AppendChild(new Text(control.Name));
+                ApplyStyleToParagraph("Heading3", para);
                 body.AppendChild(new Paragraph(new Run()));
-                addAppControlsTable(screen);
-                foreach (ControlEntity control in content
-                    .appControls
-                    .allControls
-                    .Where(o => o.Type != "appinfo" && o.Type != "screen" && screen.Equals(o.Screen()))
-                    .OrderBy(o => o.Name)
-                    .ToList()
-                    )
-                {
-                    para = body.AppendChild(new Paragraph());
-                    run = para.AppendChild(new Run());
-                    run.AppendChild(new Text(control.Name));
-                    bookmarkID = (new Random()).Next(100000, 999999).ToString();
-                    start = new BookmarkStart() { Name = CreateMD5Hash(control.Name), Id = bookmarkID };
-                    end = new BookmarkEnd() { Id = bookmarkID };
-                    para.Append(start, end);
-                    ApplyStyleToParagraph("Heading3", para);
-                    body.AppendChild(new Paragraph(new Run()));
-                    addAppControlsTable(control);
-                }
+                addAppControlsTable(control);
             }
             body.AppendChild(new Paragraph(new Run(new Break())));
         }
@@ -518,19 +498,16 @@ namespace PowerDocu.AppDocumenter
                     Table table = CreateTable();
                     table.Append(CreateRow(new Text("Name"), new Text(datasource.Name)));
                     table.Append(CreateRow(new Text("Type"), new Text(datasource.Type)));
-                    if (DetailedDocumentation)
+                    table.Append(CreateMergedRow(new Text("DataSource Properties"), 2, WordDocBuilder.cellHeaderBackground));
+                    foreach (Expression expression in datasource.Properties.OrderBy(o => o.expressionOperator))
                     {
-                        table.Append(CreateMergedRow(new Text("DataSource Properties"), 2, WordDocBuilder.cellHeaderBackground));
-                        foreach (Expression expression in datasource.Properties.OrderBy(o => o.expressionOperator))
+                        if (expression.expressionOperator == "TableDefinition")
                         {
-                            if (expression.expressionOperator == "TableDefinition")
-                            {
-                                AddTableDefinitionSummary(expression, table);
-                            }
-                            else
-                            {
-                                AddExpressionTable(expression, table);
-                            }
+                            AddTableDefinitionSummary(expression, table);
+                        }
+                        else
+                        {
+                            AddExpressionTable(expression, table);
                         }
                     }
                     body.Append(table);
@@ -618,13 +595,10 @@ namespace PowerDocu.AppDocumenter
                             table.Append(CreateRow(new Text("Resource Preview"), new Text("Resource Preview is not available, media file is invalid.")));
                         }
                     }
-                    if (DetailedDocumentation)
+                    table.Append(CreateMergedRow(new Text("Resource Properties"), 2, WordDocBuilder.cellHeaderBackground));
+                    foreach (Expression expression in resource.Properties.OrderBy(o => o.expressionOperator))
                     {
-                        table.Append(CreateMergedRow(new Text("Resource Properties"), 2, WordDocBuilder.cellHeaderBackground));
-                        foreach (Expression expression in resource.Properties.OrderBy(o => o.expressionOperator))
-                        {
-                            AddExpressionTable(expression, table);
-                        }
+                        AddExpressionTable(expression, table);
                     }
                     body.Append(table);
                     body.AppendChild(new Paragraph(new Run(new Break())));

@@ -23,8 +23,10 @@ namespace PowerDocu.AppModuleDocumenter
         // Cross-reference data from the solution
         public List<RoleEntity> allRoles;
         public List<TableEntity> allTables;
+        public List<AppEntity> allApps;
+        private CustomizationsEntity customizations;
 
-        public AppModuleDocumentationContent(AppModuleEntity appModule, string path, List<RoleEntity> roles = null, List<TableEntity> tables = null)
+        public AppModuleDocumentationContent(AppModuleEntity appModule, string path, List<RoleEntity> roles = null, List<TableEntity> tables = null, CustomizationsEntity customizations = null, List<AppEntity> apps = null)
         {
             NotificationHelper.SendNotification("Preparing documentation content for Model-Driven App: " + appModule.GetDisplayName());
             this.appModule = appModule;
@@ -33,6 +35,8 @@ namespace PowerDocu.AppModuleDocumenter
             filename = CharsetHelper.GetSafeName(appModule.GetDisplayName());
             allRoles = roles ?? new List<RoleEntity>();
             allTables = tables ?? new List<TableEntity>();
+            allApps = apps ?? new List<AppEntity>();
+            this.customizations = customizations;
         }
 
         /// <summary>
@@ -55,6 +59,67 @@ namespace PowerDocu.AppModuleDocumenter
             if (string.IsNullOrEmpty(schemaName)) return schemaName;
             TableEntity table = allTables.FirstOrDefault(t => t.getName().Equals(schemaName, System.StringComparison.OrdinalIgnoreCase));
             return table?.getLocalizedName() ?? schemaName;
+        }
+
+        /// <summary>
+        /// Resolves a view (saved query) GUID to its display name, parent table, and query type
+        /// by searching across all tables in the solution.
+        /// </summary>
+        public (string ViewName, string TableName, string QueryType) GetViewDetails(string viewId)
+        {
+            if (string.IsNullOrEmpty(viewId)) return (viewId, "", "");
+            string normalizedId = viewId.Trim('{', '}');
+            foreach (var table in allTables)
+            {
+                foreach (var view in table.GetViews())
+                {
+                    if (view.GetViewId().Trim('{', '}').Equals(normalizedId, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        string viewName = view.GetViewName();
+                        string tableName = table.getLocalizedName() ?? table.getName();
+                        string queryType = view.GetQueryTypeDisplayName();
+                        return (string.IsNullOrEmpty(viewName) ? viewId : viewName, tableName, queryType);
+                    }
+                }
+            }
+            return (viewId, "", "");
+        }
+
+        /// <summary>
+        /// Resolves a custom page's display name. Tries the parsed canvas app's Name (from Properties.json),
+        /// falls back to the customizations XML display name, then to the raw CanvasAppName.
+        /// </summary>
+        public string GetCustomPageDisplayName(AppModuleAppElement page)
+        {
+            if (customizations != null && !string.IsNullOrEmpty(page.CanvasAppName))
+            {
+                string resolved = customizations.getAppNameBySchemaName(page.CanvasAppName);
+                if (!string.IsNullOrEmpty(resolved))
+                {
+                    AppEntity app = allApps.FirstOrDefault(a => a.Name.Equals(resolved, System.StringComparison.OrdinalIgnoreCase));
+                    return app != null ? app.Name : resolved;
+                }
+            }
+            return !string.IsNullOrEmpty(page.CanvasAppName) ? page.CanvasAppName : page.UniqueName;
+        }
+
+        /// <summary>
+        /// Finds the parsed AppEntity that corresponds to a custom page's canvas app,
+        /// by matching the resolved display name against AppEntity.Name.
+        /// </summary>
+        public AppEntity GetCanvasAppForPage(AppModuleAppElement page)
+        {
+            string displayName = GetCustomPageDisplayName(page);
+            return allApps.FirstOrDefault(a => a.Name.Equals(displayName, System.StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Returns the relative path from this MDA doc folder to the canvas app's doc folder.
+        /// </summary>
+        public string GetCanvasAppDocRelativePath(AppEntity app, string indexFile)
+        {
+            string appFolder = "AppDoc " + CharsetHelper.GetSafeName(app.Name);
+            return "../" + appFolder + "/" + indexFile;
         }
     }
 }

@@ -179,11 +179,12 @@ namespace PowerDocu.AppModuleDocumenter
             body.AppendLine(HeadingWithId(2, content.headerViews, "views"));
             body.AppendLine(Paragraph($"This app includes {views.Count} view(s)."));
 
-            body.Append(TableStart("View", "ID"));
-            foreach (var comp in views)
+            body.Append(TableStart("Table", "View", "Query Type", "ID"));
+            var viewDetails = views.Select(comp => (comp, details: content.GetViewDetails(comp.ID)))
+                .OrderBy(v => v.details.TableName).ThenBy(v => v.details.ViewName);
+            foreach (var (comp, details) in viewDetails)
             {
-                string name = !string.IsNullOrEmpty(comp.SchemaName) ? comp.SchemaName : comp.ID;
-                body.Append(TableRow(name, comp.ID));
+                body.Append(TableRow(details.TableName, details.ViewName, details.QueryType, comp.ID));
             }
             body.AppendLine(TableEnd());
         }
@@ -196,10 +197,24 @@ namespace PowerDocu.AppModuleDocumenter
             body.AppendLine(HeadingWithId(2, content.headerCustomPages, "custom-pages"));
             body.AppendLine(Paragraph($"This app includes {customPages.Count} custom page(s) (embedded canvas apps)."));
 
-            body.Append(TableStart("Canvas App Page", "Customizable"));
+            body.Append(TableStart("Display Name", "Unique Name", "Canvas App"));
             foreach (var page in customPages)
             {
-                body.Append(TableRow(page.CanvasAppName, page.IsCustomizable ? "Yes" : "No"));
+                string displayName = content.GetCustomPageDisplayName(page);
+                AppEntity app = content.GetCanvasAppForPage(page);
+                string canvasAppCell;
+                if (app != null)
+                {
+                    string safeFilename = CharsetHelper.GetSafeName(app.Name);
+                    string indexFile = ("index-" + safeFilename + ".html").Replace(" ", "-");
+                    string href = content.GetCanvasAppDocRelativePath(app, indexFile);
+                    canvasAppCell = Link(app.Name, href);
+                }
+                else
+                {
+                    canvasAppCell = Encode(page.CanvasAppName);
+                }
+                body.Append(TableRowRaw(Encode(displayName), Encode(page.UniqueName), canvasAppCell));
             }
             body.AppendLine(TableEnd());
         }

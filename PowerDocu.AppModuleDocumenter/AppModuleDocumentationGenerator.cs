@@ -15,7 +15,8 @@ namespace PowerDocu.AppModuleDocumenter
             SolutionEntity solution,
             bool fullDocumentation,
             ConfigHelper config,
-            string path
+            string path,
+            List<AppEntity> apps = null
         )
         {
             if (solution?.Customizations == null)
@@ -43,7 +44,7 @@ namespace PowerDocu.AppModuleDocumenter
             {
                 foreach (AppModuleEntity appModule in appModules)
                 {
-                    AppModuleDocumentationContent content = new AppModuleDocumentationContent(appModule, path, roles, tables);
+                    AppModuleDocumentationContent content = new AppModuleDocumentationContent(appModule, path, roles, tables, solution.Customizations, apps);
 
                     // Generate SiteMap SVG
                     if (appModule.SiteMap != null)

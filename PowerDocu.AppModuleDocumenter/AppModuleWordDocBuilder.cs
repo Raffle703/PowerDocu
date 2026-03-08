@@ -171,11 +171,12 @@ namespace PowerDocu.AppModuleDocumenter
                 new Text($"This app includes {views.Count} view(s)."))));
 
             Table table = CreateTable();
-            table.Append(CreateHeaderRow(new Text("View"), new Text("ID")));
-            foreach (var comp in views)
+            table.Append(CreateHeaderRow(new Text("Table"), new Text("View"), new Text("Query Type"), new Text("ID")));
+            var viewDetails = views.Select(comp => (comp, details: content.GetViewDetails(comp.ID)))
+                .OrderBy(v => v.details.TableName).ThenBy(v => v.details.ViewName);
+            foreach (var (comp, details) in viewDetails)
             {
-                string name = !string.IsNullOrEmpty(comp.SchemaName) ? comp.SchemaName : comp.ID;
-                table.Append(CreateRow(new Text(name), new Text(comp.ID)));
+                table.Append(CreateRow(new Text(details.TableName), new Text(details.ViewName), new Text(details.QueryType), new Text(comp.ID)));
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));
@@ -191,10 +192,13 @@ namespace PowerDocu.AppModuleDocumenter
                 new Text($"This app includes {customPages.Count} custom page(s) (embedded canvas apps)."))));
 
             Table table = CreateTable();
-            table.Append(CreateHeaderRow(new Text("Canvas App Page"), new Text("Customizable")));
+            table.Append(CreateHeaderRow(new Text("Display Name"), new Text("Unique Name"), new Text("Canvas App")));
             foreach (var page in customPages)
             {
-                table.Append(CreateRow(new Text(page.CanvasAppName), new Text(page.IsCustomizable ? "Yes" : "No")));
+                string displayName = content.GetCustomPageDisplayName(page);
+                AppEntity app = content.GetCanvasAppForPage(page);
+                string canvasAppName = app != null ? app.Name : page.CanvasAppName;
+                table.Append(CreateRow(new Text(displayName), new Text(page.UniqueName), new Text(canvasAppName)));
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));

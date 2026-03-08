@@ -155,12 +155,13 @@ namespace PowerDocu.AppModuleDocumenter
             mainDocument.Root.Add(new MdParagraph(new MdTextSpan($"This app includes {views.Count} view(s).")));
 
             List<MdTableRow> tableRows = new List<MdTableRow>();
-            foreach (var comp in views)
+            var viewDetails = views.Select(comp => (comp, details: content.GetViewDetails(comp.ID)))
+                .OrderBy(v => v.details.TableName).ThenBy(v => v.details.ViewName);
+            foreach (var (comp, details) in viewDetails)
             {
-                string name = !string.IsNullOrEmpty(comp.SchemaName) ? comp.SchemaName : comp.ID;
-                tableRows.Add(new MdTableRow(name, comp.ID));
+                tableRows.Add(new MdTableRow(details.TableName, details.ViewName, details.QueryType, comp.ID));
             }
-            mainDocument.Root.Add(new MdTable(new MdTableRow("View", "ID"), tableRows));
+            mainDocument.Root.Add(new MdTable(new MdTableRow("Table", "View", "Query Type", "ID"), tableRows));
         }
 
         private void addCustomPages()
@@ -174,9 +175,23 @@ namespace PowerDocu.AppModuleDocumenter
             List<MdTableRow> tableRows = new List<MdTableRow>();
             foreach (var page in customPages)
             {
-                tableRows.Add(new MdTableRow(page.CanvasAppName, page.IsCustomizable ? "Yes" : "No"));
+                string displayName = content.GetCustomPageDisplayName(page);
+                AppEntity app = content.GetCanvasAppForPage(page);
+                string canvasAppCell;
+                if (app != null)
+                {
+                    string safeFilename = CharsetHelper.GetSafeName(app.Name);
+                    string indexFile = ("index-" + safeFilename + ".md").Replace(" ", "-");
+                    string href = content.GetCanvasAppDocRelativePath(app, indexFile);
+                    canvasAppCell = $"[{app.Name}]({href})";
+                }
+                else
+                {
+                    canvasAppCell = page.CanvasAppName;
+                }
+                tableRows.Add(new MdTableRow(displayName, page.UniqueName, canvasAppCell));
             }
-            mainDocument.Root.Add(new MdTable(new MdTableRow("Canvas App Page", "Customizable"), tableRows));
+            mainDocument.Root.Add(new MdTable(new MdTableRow("Display Name", "Unique Name", "Canvas App"), tableRows));
         }
 
         private void addAppSettings()

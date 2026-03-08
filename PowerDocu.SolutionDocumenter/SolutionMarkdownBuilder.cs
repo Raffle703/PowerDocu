@@ -44,17 +44,22 @@ namespace PowerDocu.SolutionDocumenter
         {
             List<MdTableRow> tableRows = new List<MdTableRow>();
             solutionDoc.Root.Add(new MdHeading("Statistics", 2));
+            var statisticsEntries = new List<(string Name, int Count, MdSpan Link)>();
             if (content.solution.EnvironmentVariables.Count > 0)
             {
                 var envLink = new MdLinkSpan("Environment Variables", "#environment-variables");
-                tableRows.Add(new MdTableRow(envLink, new MdTextSpan(content.solution.EnvironmentVariables.Count.ToString())));
+                statisticsEntries.Add(("Environment Variables", content.solution.EnvironmentVariables.Count, envLink));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
-                List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
+                int count = content.solution.Components.Where(c => c.Type == componentType).Count();
                 string sectionHeading = GetComponentSectionHeading(componentType);
                 var link = new MdLinkSpan(componentType, "#" + sectionHeading.ToLowerInvariant().Replace(" ", "-"));
-                tableRows.Add(new MdTableRow(link, new MdTextSpan(components.Count.ToString())));
+                statisticsEntries.Add((componentType, count, link));
+            }
+            foreach (var entry in statisticsEntries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                tableRows.Add(new MdTableRow(entry.Link, new MdTextSpan(entry.Count.ToString())));
             }
             if (tableRows.Count > 0)
                 solutionDoc.Root.Add(new MdTable(new MdTableRow("Component Type", "Number of Components"), tableRows));
@@ -209,12 +214,13 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     default:
                         solutionDoc.Root.Add(new MdHeading(componentType, 3));
-                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
+                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).ToList();
+                        var sortedNames = components.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                         List<MdTableRow> componentTableRows = new List<MdTableRow>();
-                        foreach (SolutionComponent component in components)
+                        foreach (string compName in sortedNames)
                         {
                             //todo add link to documentation
-                            componentTableRows.Add(new MdTableRow(new MdTextSpan(content.GetDisplayNameForComponent(component))));
+                            componentTableRows.Add(new MdTableRow(new MdTextSpan(compName)));
                         }
                         if (componentTableRows.Count > 0)
                         {
@@ -277,7 +283,7 @@ namespace PowerDocu.SolutionDocumenter
             List<OptionSetEntity> optionSets = content.solution.Customizations.getOptionSets();
             if (optionSets.Count > 0)
             {
-                foreach (OptionSetEntity optionSet in optionSets)
+                foreach (OptionSetEntity optionSet in optionSets.OrderBy(o => o.GetDisplayName()))
                 {
                     solutionDoc.Root.Add(new MdHeading(optionSet.GetDisplayName() + " (" + optionSet.Name + ")", 4));
                     List<MdTableRow> tableRows = new List<MdTableRow>
@@ -307,7 +313,7 @@ namespace PowerDocu.SolutionDocumenter
         private void renderSecurityRoles()
         {
             solutionDoc.Root.Add(new MdHeading("Security Roles", 3));
-            foreach (RoleEntity role in content.solution.Customizations.getRoles())
+            foreach (RoleEntity role in content.solution.Customizations.getRoles().OrderBy(r => r.Name))
             {
                 solutionDoc.Root.Add(new MdHeading(role.Name + " (" + role.ID + ")", 4));
                 List<MdTableRow> componentTableRows = new List<MdTableRow>();
@@ -343,7 +349,7 @@ namespace PowerDocu.SolutionDocumenter
         private void renderEntities()
         {
             solutionDoc.Root.Add(new MdHeading("Tables", 3));
-            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities())
+            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()))
             {
                 solutionDoc.Root.Add(new MdHeading(tableEntity.getLocalizedName() + " (" + tableEntity.getName() + ")", 4));
                 List<MdTableRow> tableRows = new List<MdTableRow>

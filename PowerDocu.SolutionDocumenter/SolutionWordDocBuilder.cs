@@ -43,14 +43,19 @@ namespace PowerDocu.SolutionDocumenter
             AddHeading("Statistics", "Heading1");
             table = CreateTable();
             table.Append(CreateHeaderRow(new Text("Component Type"), new Text("Number of Components")));
+            var statisticsEntries = new List<(string Name, int Count)>();
             if (content.solution.EnvironmentVariables.Count > 0)
             {
-                table.Append(CreateRow(new Text("Environment Variables"), new Text(content.solution.EnvironmentVariables.Count.ToString())));
+                statisticsEntries.Add(("Environment Variables", content.solution.EnvironmentVariables.Count));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
-                List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
-                table.Append(CreateRow(new Text(componentType), new Text(components.Count.ToString())));
+                int count = content.solution.Components.Where(c => c.Type == componentType).Count();
+                statisticsEntries.Add((componentType, count));
+            }
+            foreach (var entry in statisticsEntries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                table.Append(CreateRow(new Text(entry.Name), new Text(entry.Count.ToString())));
             }
             body.Append(table);
         }
@@ -194,12 +199,13 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     default:
                         AddHeading(componentType, "Heading2");
-                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
+                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).ToList();
+                        var sortedNames = components.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                         Table table = CreateTable();
                         table.Append(CreateHeaderRow(new Text(componentType)));
-                        foreach (SolutionComponent component in components)
+                        foreach (string compName in sortedNames)
                         {
-                            table.Append(CreateRow(new Text(content.GetDisplayNameForComponent(component))));
+                            table.Append(CreateRow(new Text(compName)));
                         }
                         body.Append(table);
                         body.AppendChild(new Paragraph());
@@ -258,7 +264,7 @@ namespace PowerDocu.SolutionDocumenter
             AddHeading("Tables", "Heading2");
             Paragraph para;
             Run run;
-            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities())
+            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()))
             {
                 AddHeading(tableEntity.getLocalizedName() + " (" + tableEntity.getName() + ")", "Heading3");
                 Table table = CreateTable();
@@ -592,7 +598,7 @@ namespace PowerDocu.SolutionDocumenter
             List<OptionSetEntity> optionSets = content.solution.Customizations.getOptionSets();
             if (optionSets.Count > 0)
             {
-                foreach (OptionSetEntity optionSet in optionSets)
+                foreach (OptionSetEntity optionSet in optionSets.OrderBy(o => o.GetDisplayName()))
                 {
                     AddHeading(optionSet.GetDisplayName() + " (" + optionSet.Name + ")", "Heading3");
                     Table table = CreateTable();
@@ -629,7 +635,7 @@ namespace PowerDocu.SolutionDocumenter
             AddHeading("Security Roles", "Heading2");
             Paragraph para;
             Run run;
-            foreach (RoleEntity role in content.solution.Customizations.getRoles())
+            foreach (RoleEntity role in content.solution.Customizations.getRoles().OrderBy(r => r.Name))
             {
                 AddHeading(role.Name + " (" + role.ID + ")", "Heading3");
                 Table table = CreateTable();

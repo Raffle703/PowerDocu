@@ -84,12 +84,11 @@ namespace PowerDocu.SolutionDocumenter
                         }
                         break;
                     default:
-                        List<SolutionComponent> components = content.solution.Components
-                            .Where(c => c.Type == componentType)
-                            .OrderBy(c => c.reqdepDisplayName).ToList();
-                        foreach (SolutionComponent component in components)
+                        List<SolutionComponent> navComponents = content.solution.Components
+                            .Where(c => c.Type == componentType).ToList();
+                        var navSortedNames = navComponents.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+                        foreach (string compName in navSortedNames)
                         {
-                            string compName = content.GetDisplayNameForComponent(component);
                             navItems.Add((compName, solutionFileName + "#" + SanitizeAnchorId("comp-" + compName), 2));
                         }
                         break;
@@ -134,17 +133,22 @@ namespace PowerDocu.SolutionDocumenter
         {
             body.AppendLine(HeadingWithId(2, "Statistics", "statistics"));
             body.Append(TableStart("Component Type", "Number of Components"));
+            var statisticsEntries = new List<(string Name, string LinkHtml, int Count)>();
             if (content.solution.EnvironmentVariables.Count > 0)
             {
                 string envLink = $"<a href=\"#environment-variables\">Environment Variables</a>";
-                body.Append(TableRowRaw(envLink, Encode(content.solution.EnvironmentVariables.Count.ToString())));
+                statisticsEntries.Add(("Environment Variables", envLink, content.solution.EnvironmentVariables.Count));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
-                List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
+                int count = content.solution.Components.Where(c => c.Type == componentType).Count();
                 string anchorId = GetComponentSectionAnchorId(componentType);
                 string link = $"<a href=\"#{Encode(anchorId)}\">{Encode(componentType)}</a>";
-                body.Append(TableRowRaw(link, Encode(components.Count.ToString())));
+                statisticsEntries.Add((componentType, link, count));
+            }
+            foreach (var entry in statisticsEntries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                body.Append(TableRowRaw(entry.LinkHtml, Encode(entry.Count.ToString())));
             }
             body.AppendLine(TableEnd());
         }
@@ -284,13 +288,13 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     default:
                         body.AppendLine(HeadingWithId(3, componentType, SanitizeAnchorId(componentType)));
-                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).OrderBy(c => c.reqdepDisplayName).ToList();
+                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).ToList();
                         if (components.Count > 0)
                         {
+                            var sortedNames = components.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                             body.Append(TableStart(componentType));
-                            foreach (SolutionComponent component in components)
+                            foreach (string compName in sortedNames)
                             {
-                                string compName = content.GetDisplayNameForComponent(component);
                                 string anchorId = SanitizeAnchorId("comp-" + compName);
                                 body.Append($"<tr id=\"{Encode(anchorId)}\"><td>{Encode(compName)}</td></tr>");
                             }
@@ -351,7 +355,7 @@ namespace PowerDocu.SolutionDocumenter
             List<OptionSetEntity> optionSets = content.solution.Customizations.getOptionSets();
             if (optionSets.Count > 0)
             {
-                foreach (OptionSetEntity optionSet in optionSets)
+                foreach (OptionSetEntity optionSet in optionSets.OrderBy(o => o.GetDisplayName()))
                 {
                     body.AppendLine(HeadingWithId(4, optionSet.GetDisplayName() + " (" + optionSet.Name + ")", SanitizeAnchorId("optionset-" + optionSet.Name)));
                     body.Append(TableStart("Property", "Value"));
@@ -379,7 +383,7 @@ namespace PowerDocu.SolutionDocumenter
         private void renderSecurityRoles(StringBuilder body)
         {
             body.AppendLine(HeadingWithId(3, "Security Roles", "security-roles"));
-            foreach (RoleEntity role in content.solution.Customizations.getRoles())
+            foreach (RoleEntity role in content.solution.Customizations.getRoles().OrderBy(r => r.Name))
             {
                 body.AppendLine(HeadingWithId(4, role.Name + " (" + role.ID + ")", SanitizeAnchorId("role-" + role.Name)));
                 body.Append(TableStart("Table", "Create", "Read", "Write", "Delete", "Append", "Append To", "Assign", "Share"));
@@ -415,7 +419,7 @@ namespace PowerDocu.SolutionDocumenter
         private void renderEntities(StringBuilder body)
         {
             body.AppendLine(HeadingWithId(3, "Tables", "tables"));
-            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities())
+            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()))
             {
                 body.AppendLine(HeadingWithId(4, tableEntity.getLocalizedName() + " (" + tableEntity.getName() + ")", SanitizeAnchorId("table-" + tableEntity.getName())));
                 body.Append(TableStart("Property", "Value"));

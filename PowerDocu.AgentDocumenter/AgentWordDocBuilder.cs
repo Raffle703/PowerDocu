@@ -110,7 +110,7 @@ namespace PowerDocu.AgentDocumenter
 
             // Tools
             AddHeading(content.Tools, "Heading3");
-            var overviewTools = content.agent.GetAllToolInfos();
+            var overviewTools = content.GetResolvedToolInfos();
             if (overviewTools.Count > 0)
             {
                 foreach (AgentToolInfo tool in overviewTools)
@@ -404,7 +404,7 @@ namespace PowerDocu.AgentDocumenter
         {
             AddHeading(content.Tools, "Heading1");
 
-            var tools = content.agent.GetAllToolInfos();
+            var tools = content.GetResolvedToolInfos();
             if (tools.Count == 0)
             {
                 body.AppendChild(new Paragraph(new Run(new Text("No tools configured."))));

@@ -135,7 +135,7 @@ namespace PowerDocu.AgentDocumenter
             }
 
             body.AppendLine(Heading(3, content.Tools));
-            var overviewTools = content.agent.GetAllToolInfos();
+            var overviewTools = content.GetResolvedToolInfos();
             if (overviewTools.Count > 0)
             {
                 body.AppendLine(BulletListStart());
@@ -338,7 +338,7 @@ namespace PowerDocu.AgentDocumenter
             body.AppendLine(buildMetadataTable());
             body.AppendLine(Heading(2, content.Tools));
 
-            var tools = content.agent.GetAllToolInfos();
+            var tools = content.GetResolvedToolInfos();
             if (tools.Count == 0)
             {
                 body.AppendLine(Paragraph("No tools configured."));

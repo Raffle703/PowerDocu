@@ -46,12 +46,12 @@ namespace PowerDocu.SolutionDocumenter
             var statisticsEntries = new List<(string Name, int Count)>();
             if (content.solution.EnvironmentVariables.Count > 0)
             {
-                statisticsEntries.Add(("Environment Variables", content.solution.EnvironmentVariables.Count));
+                statisticsEntries.Add((GetComponentSectionHeading("EnvironmentVariable"), content.solution.EnvironmentVariables.Count));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
-                statisticsEntries.Add((componentType, count));
+                statisticsEntries.Add((GetComponentSectionHeading(componentType), count));
             }
             foreach (var entry in statisticsEntries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
             {
@@ -176,15 +176,44 @@ namespace PowerDocu.SolutionDocumenter
                 body.AppendChild(new Paragraph());
             }
         }
+        /// <summary>
+        /// Returns the heading text used for the section of a given component type.
+        /// </summary>
+        private static string GetComponentSectionHeading(string componentType)
+        {
+            return componentType switch
+            {
+                "EnvironmentVariable" => "Environment Variables",
+                "Role" => "Security Roles",
+                "Entity" => "Tables",
+                "Option Set" => "Option Sets",
+                _ => componentType
+            };
+        }
+
         private void addSolutionComponents()
         {
             AddHeading("Solution Components", "Heading1");
             body.AppendChild(new Paragraph(new Run(new Text("This solution contains the following components"))));
-            addEnvironmentVariables();
+
+            // Build a list of all sections with their display headings for correct alphabetical ordering
+            var sections = new List<(string SortName, string ComponentType)>();
+            if (content.solution.EnvironmentVariables.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("EnvironmentVariable"), "EnvironmentVariable"));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
-                switch (componentType)
+                sections.Add((GetComponentSectionHeading(componentType), componentType));
+            }
+
+            foreach (var section in sections.OrderBy(s => s.SortName, StringComparer.OrdinalIgnoreCase))
+            {
+                switch (section.ComponentType)
                 {
+                    case "EnvironmentVariable":
+                        addEnvironmentVariables();
+                        break;
                     case "Role":
                         renderSecurityRoles();
                         break;
@@ -198,11 +227,11 @@ namespace PowerDocu.SolutionDocumenter
                         renderOptionSets();
                         break;
                     default:
-                        AddHeading(componentType, "Heading2");
-                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).ToList();
+                        AddHeading(section.ComponentType, "Heading2");
+                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == section.ComponentType).ToList();
                         var sortedNames = components.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                         Table table = CreateTable();
-                        table.Append(CreateHeaderRow(new Text(componentType)));
+                        table.Append(CreateHeaderRow(new Text(section.ComponentType)));
                         foreach (string compName in sortedNames)
                         {
                             table.Append(CreateRow(new Text(compName)));

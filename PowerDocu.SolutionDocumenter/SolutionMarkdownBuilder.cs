@@ -73,6 +73,7 @@ namespace PowerDocu.SolutionDocumenter
         {
             return componentType switch
             {
+                "EnvironmentVariable" => "Environment Variables",
                 "Role" => "Security Roles",
                 "Entity" => "Tables",
                 "Option Set" => "Option Sets",
@@ -198,11 +199,25 @@ namespace PowerDocu.SolutionDocumenter
         {
             solutionDoc.Root.Add(new MdHeading("Solution Components", 2));
             solutionDoc.Root.Add(new MdParagraph(new MdTextSpan("This solution contains the following components")));
-            addEnvironmentVariables();
+
+            // Build a list of all sections with their display headings for correct alphabetical ordering
+            var sections = new List<(string SortName, string ComponentType)>();
+            if (content.solution.EnvironmentVariables.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("EnvironmentVariable"), "EnvironmentVariable"));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
-                switch (componentType)
+                sections.Add((GetComponentSectionHeading(componentType), componentType));
+            }
+
+            foreach (var section in sections.OrderBy(s => s.SortName, StringComparer.OrdinalIgnoreCase))
+            {
+                switch (section.ComponentType)
                 {
+                    case "EnvironmentVariable":
+                        addEnvironmentVariables();
+                        break;
                     case "Role":
                         renderSecurityRoles();
                         break;
@@ -213,8 +228,8 @@ namespace PowerDocu.SolutionDocumenter
                         renderOptionSets();
                         break;
                     default:
-                        solutionDoc.Root.Add(new MdHeading(componentType, 3));
-                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).ToList();
+                        solutionDoc.Root.Add(new MdHeading(section.ComponentType, 3));
+                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == section.ComponentType).ToList();
                         var sortedNames = components.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                         List<MdTableRow> componentTableRows = new List<MdTableRow>();
                         foreach (string compName in sortedNames)
@@ -224,7 +239,7 @@ namespace PowerDocu.SolutionDocumenter
                         }
                         if (componentTableRows.Count > 0)
                         {
-                            solutionDoc.Root.Add(new MdTable(new MdTableRow(componentType), componentTableRows));
+                            solutionDoc.Root.Add(new MdTable(new MdTableRow(section.ComponentType), componentTableRows));
                         }
                         break;
                 }

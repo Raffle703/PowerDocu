@@ -9,6 +9,7 @@ namespace PowerDocu.AppModuleDocumenter
     {
         public string folderPath, filename;
         public AppModuleEntity appModule;
+        public DocumentationContext context;
 
         // Section headers
         public string headerOverview = "Overview";
@@ -20,12 +21,29 @@ namespace PowerDocu.AppModuleDocumenter
         public string headerAppSettings = "App Settings";
         public string headerDocumentationGenerated = "Documentation generated at";
 
-        // Cross-reference data from the solution
+        // Cross-reference data from the context
         public List<RoleEntity> allRoles;
         public List<TableEntity> allTables;
         public List<AppEntity> allApps;
         private CustomizationsEntity customizations;
 
+        public AppModuleDocumentationContent(AppModuleEntity appModule, string path, DocumentationContext context)
+        {
+            NotificationHelper.SendNotification("Preparing documentation content for Model-Driven App: " + appModule.GetDisplayName());
+            this.appModule = appModule;
+            this.context = context;
+            folderPath = path + CharsetHelper.GetSafeName(@"\MDADoc " + appModule.GetDisplayName() + @"\");
+            Directory.CreateDirectory(folderPath);
+            filename = CharsetHelper.GetSafeName(appModule.GetDisplayName());
+            allRoles = context.Roles ?? new List<RoleEntity>();
+            allTables = context.Tables ?? new List<TableEntity>();
+            allApps = context.Apps ?? new List<AppEntity>();
+            this.customizations = context.Customizations;
+        }
+
+        /// <summary>
+        /// Legacy constructor for backward compatibility.
+        /// </summary>
         public AppModuleDocumentationContent(AppModuleEntity appModule, string path, List<RoleEntity> roles = null, List<TableEntity> tables = null, CustomizationsEntity customizations = null, List<AppEntity> apps = null)
         {
             NotificationHelper.SendNotification("Preparing documentation content for Model-Driven App: " + appModule.GetDisplayName());

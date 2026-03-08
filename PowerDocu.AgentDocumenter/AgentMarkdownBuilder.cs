@@ -223,7 +223,7 @@ namespace PowerDocu.AgentDocumenter
                 mainDocument.Root.Add(new MdParagraph(new MdTextSpan("No knowledge sources configured.")));
             }
             mainDocument.Root.Add(new MdHeading(content.Tools, 3));
-            var overviewTools = content.agent.GetAllToolInfos();
+            var overviewTools = content.GetResolvedToolInfos();
             if (overviewTools.Count > 0)
             {
                 List<MdListItem> toolsList = new List<MdListItem>();
@@ -553,7 +553,7 @@ namespace PowerDocu.AgentDocumenter
         {
             toolsDocument.Root.Add(new MdHeading(content.Tools, 2));
 
-            var tools = content.agent.GetAllToolInfos();
+            var tools = content.GetResolvedToolInfos();
             if (tools.Count == 0)
             {
                 toolsDocument.Root.Add(new MdParagraph(new MdTextSpan("No tools configured.")));

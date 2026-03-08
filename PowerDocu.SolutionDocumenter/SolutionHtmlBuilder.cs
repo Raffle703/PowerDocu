@@ -41,58 +41,72 @@ namespace PowerDocu.SolutionDocumenter
                 ("Solution Components", solutionFileName + "#solution-components", 0)
             };
 
-            // Environment Variables appear first in the body, before the component types
+            // Build component section groups (level-1 entry + level-2 children), then sort alphabetically
+            var componentSections = new List<List<(string label, string href, int level)>>();
+
             if (content.solution.EnvironmentVariables.Count > 0)
             {
-                navItems.Add(("Environment Variables", solutionFileName + "#environment-variables", 1));
+                var section = new List<(string label, string href, int level)>
+                {
+                    ("Environment Variables", solutionFileName + "#environment-variables", 1)
+                };
                 foreach (EnvironmentVariableEntity envVar in content.solution.EnvironmentVariables.OrderBy(e => e.DisplayName))
                 {
-                    navItems.Add((envVar.DisplayName, solutionFileName + "#" + SanitizeAnchorId("envvar-" + envVar.Name), 2));
+                    section.Add((envVar.DisplayName, solutionFileName + "#" + SanitizeAnchorId("envvar-" + envVar.Name), 2));
                 }
+                componentSections.Add(section);
             }
 
-            // Add sub-entries for each component section, using the same order as Statistics
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 string label = GetComponentSectionLabel(componentType);
                 string anchorId = GetComponentSectionAnchorId(componentType);
-                navItems.Add((label, solutionFileName + "#" + anchorId, 1));
+                var section = new List<(string label, string href, int level)>
+                {
+                    (label, solutionFileName + "#" + anchorId, 1)
+                };
 
-                // Add individual items as level-2 entries
                 switch (componentType)
                 {
                     case "Role":
-                        foreach (RoleEntity role in content.solution.Customizations.getRoles())
+                        foreach (RoleEntity role in content.solution.Customizations.getRoles().OrderBy(r => r.Name))
                         {
-                            navItems.Add((role.Name, solutionFileName + "#" + SanitizeAnchorId("role-" + role.Name), 2));
+                            section.Add((role.Name, solutionFileName + "#" + SanitizeAnchorId("role-" + role.Name), 2));
                         }
                         break;
                     case "Entity":
-                        foreach (TableEntity table in content.solution.Customizations.getEntities())
+                        foreach (TableEntity table in content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()))
                         {
                             string tableName = table.getLocalizedName();
                             if (String.IsNullOrEmpty(tableName)) tableName = table.getName();
-                            navItems.Add((tableName, solutionFileName + "#" + SanitizeAnchorId("table-" + table.getName()), 2));
+                            section.Add((tableName, solutionFileName + "#" + SanitizeAnchorId("table-" + table.getName()), 2));
                         }
                         break;
                     case "Option Set":
-                        foreach (OptionSetEntity optionSet in content.solution.Customizations.getOptionSets())
+                        foreach (OptionSetEntity optionSet in content.solution.Customizations.getOptionSets().OrderBy(o => o.GetDisplayName()))
                         {
                             string osName = optionSet.GetDisplayName();
                             if (String.IsNullOrEmpty(osName)) osName = optionSet.Name;
-                            navItems.Add((osName, solutionFileName + "#" + SanitizeAnchorId("optionset-" + optionSet.Name), 2));
+                            section.Add((osName, solutionFileName + "#" + SanitizeAnchorId("optionset-" + optionSet.Name), 2));
                         }
                         break;
                     default:
-                        List<SolutionComponent> navComponents = content.solution.Components
-                            .Where(c => c.Type == componentType).ToList();
-                        var navSortedNames = navComponents.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+                        var navSortedNames = content.solution.Components
+                            .Where(c => c.Type == componentType)
+                            .Select(c => content.GetDisplayNameForComponent(c))
+                            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
                         foreach (string compName in navSortedNames)
                         {
-                            navItems.Add((compName, solutionFileName + "#" + SanitizeAnchorId("comp-" + compName), 2));
+                            section.Add((compName, solutionFileName + "#" + SanitizeAnchorId("comp-" + compName), 2));
                         }
                         break;
                 }
+                componentSections.Add(section);
+            }
+
+            foreach (var section in componentSections.OrderBy(s => s[0].label, StringComparer.OrdinalIgnoreCase))
+            {
+                navItems.AddRange(section);
             }
 
             navItems.Add(("Dependencies", solutionFileName + "#dependencies", 0));
@@ -137,14 +151,15 @@ namespace PowerDocu.SolutionDocumenter
             if (content.solution.EnvironmentVariables.Count > 0)
             {
                 string envLink = $"<a href=\"#environment-variables\">Environment Variables</a>";
-                statisticsEntries.Add(("Environment Variables", envLink, content.solution.EnvironmentVariables.Count));
+                statisticsEntries.Add((GetComponentSectionLabel("EnvironmentVariable"), envLink, content.solution.EnvironmentVariables.Count));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
                 string anchorId = GetComponentSectionAnchorId(componentType);
-                string link = $"<a href=\"#{Encode(anchorId)}\">{Encode(componentType)}</a>";
-                statisticsEntries.Add((componentType, link, count));
+                string label = GetComponentSectionLabel(componentType);
+                string link = $"<a href=\"#{Encode(anchorId)}\">{Encode(label)}</a>";
+                statisticsEntries.Add((label, link, count));
             }
             foreach (var entry in statisticsEntries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
             {
@@ -161,6 +176,7 @@ namespace PowerDocu.SolutionDocumenter
         {
             return componentType switch
             {
+                "EnvironmentVariable" => "environment-variables",
                 "Role" => "security-roles",
                 "Entity" => "tables",
                 "Option Set" => "option-sets",
@@ -176,6 +192,7 @@ namespace PowerDocu.SolutionDocumenter
         {
             return componentType switch
             {
+                "EnvironmentVariable" => "Environment Variables",
                 "Role" => "Security Roles",
                 "Entity" => "Tables",
                 "Option Set" => "Option Sets",
@@ -271,12 +288,25 @@ namespace PowerDocu.SolutionDocumenter
         {
             body.AppendLine(HeadingWithId(2, "Solution Components", "solution-components"));
             body.AppendLine(Paragraph("This solution contains the following components"));
-            addEnvironmentVariables(body);
 
+            // Build a list of all sections with their display headings for correct alphabetical ordering
+            var sections = new List<(string SortName, string ComponentType)>();
+            if (content.solution.EnvironmentVariables.Count > 0)
+            {
+                sections.Add((GetComponentSectionLabel("EnvironmentVariable"), "EnvironmentVariable"));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
-                switch (componentType)
+                sections.Add((GetComponentSectionLabel(componentType), componentType));
+            }
+
+            foreach (var section in sections.OrderBy(s => s.SortName, StringComparer.OrdinalIgnoreCase))
+            {
+                switch (section.ComponentType)
                 {
+                    case "EnvironmentVariable":
+                        addEnvironmentVariables(body);
+                        break;
                     case "Role":
                         renderSecurityRoles(body);
                         break;
@@ -287,12 +317,12 @@ namespace PowerDocu.SolutionDocumenter
                         renderOptionSets(body);
                         break;
                     default:
-                        body.AppendLine(HeadingWithId(3, componentType, SanitizeAnchorId(componentType)));
-                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == componentType).ToList();
+                        body.AppendLine(HeadingWithId(3, section.ComponentType, SanitizeAnchorId(section.ComponentType)));
+                        List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == section.ComponentType).ToList();
                         if (components.Count > 0)
                         {
                             var sortedNames = components.Select(c => content.GetDisplayNameForComponent(c)).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
-                            body.Append(TableStart(componentType));
+                            body.Append(TableStart(section.ComponentType));
                             foreach (string compName in sortedNames)
                             {
                                 string anchorId = SanitizeAnchorId("comp-" + compName);

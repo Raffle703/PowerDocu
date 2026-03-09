@@ -248,11 +248,24 @@ namespace PowerDocu.AppDocumenter
                 content.appVariablesInfo.variableCollectionControlReferences.TryGetValue(var, out List<ControlPropertyReference> references);
                 if (references != null)
                 {
-                    body.AppendLine(Paragraph("Variable used in:"));
+                    body.AppendLine(Paragraph("Collection used in:"));
                     body.Append(TableStart("Control", "Property"));
                     foreach (ControlPropertyReference reference in references.OrderBy(o => o.Control.Name).ThenBy(o => o.RuleProperty))
                     {
-                        body.Append(TableRow(reference.Control.Name + " (" + reference.Control.Screen()?.Name + ")", reference.RuleProperty));
+                        if (reference.Control.Type == "appinfo")
+                        {
+                            body.Append(TableRowRaw(
+                                Link(reference.Control.Name, appDetailsFileName),
+                                Encode(reference.RuleProperty)));
+                        }
+                        else
+                        {
+                            string screenFileName = screenFileNames.GetValueOrDefault(reference.Control.Screen()?.Name, "#");
+                            string controlAnchor = SanitizeAnchorId(reference.Control.Name);
+                            body.Append(TableRowRaw(
+                                Link(reference.Control.Name + " (" + reference.Control.Screen()?.Name + ")", screenFileName + "#" + controlAnchor),
+                                Encode(reference.RuleProperty)));
+                        }
                     }
                     body.AppendLine(TableEnd());
                 }

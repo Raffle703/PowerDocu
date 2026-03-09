@@ -245,7 +245,7 @@ namespace PowerDocu.AppDocumenter
                 content.appVariablesInfo.variableCollectionControlReferences.TryGetValue(var, out List<ControlPropertyReference> references);
                 if (references != null)
                 {
-                    variablesDocument.Root.Add(new MdParagraph(new MdTextSpan("Variable used in:")));
+                    variablesDocument.Root.Add(new MdParagraph(new MdTextSpan("Collection used in:")));
                     List<MdTableRow> tableRows = new List<MdTableRow>();
                     foreach (ControlPropertyReference reference in references.OrderBy(o => o.Control.Name).ThenBy(o => o.RuleProperty))
                     {

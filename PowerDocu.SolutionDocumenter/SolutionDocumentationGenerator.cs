@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using PowerDocu.Common;
 using PowerDocu.AgentDocumenter;
+using PowerDocu.AIModelDocumenter;
 using PowerDocu.AppDocumenter;
 using PowerDocu.AppModuleDocumenter;
 using PowerDocu.FlowDocumenter;
@@ -108,6 +109,12 @@ namespace PowerDocu.SolutionDocumenter
             if (agents != null)
             {
                 AgentDocumentationGenerator.GenerateOutput(context, solutionBasePath);
+            }
+
+            // Generate AI Model documentation
+            if (config.documentSolution && context.Solution != null)
+            {
+                AIModelDocumentationGenerator.GenerateOutput(context, solutionBasePath);
             }
 
             // Generate solution-level documentation (solution overview, model-driven apps, Dataverse graph)

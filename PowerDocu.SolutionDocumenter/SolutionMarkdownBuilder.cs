@@ -50,6 +50,11 @@ namespace PowerDocu.SolutionDocumenter
                 var envLink = new MdLinkSpan("Environment Variables", "#environment-variables");
                 statisticsEntries.Add(("Environment Variables", content.solution.EnvironmentVariables.Count, envLink));
             }
+            if (content.agents.Count > 0)
+            {
+                var agentLink = new MdLinkSpan("Agents", "#agents");
+                statisticsEntries.Add(("Agents", content.agents.Count, agentLink));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
@@ -76,7 +81,9 @@ namespace PowerDocu.SolutionDocumenter
                 "EnvironmentVariable" => "Environment Variables",
                 "Role" => "Security Roles",
                 "Entity" => "Tables",
+                "AI Project" => "AI Models",
                 "Option Set" => "Option Sets",
+                "Agent" => "Agents",
                 _ => componentType
             };
         }
@@ -206,6 +213,10 @@ namespace PowerDocu.SolutionDocumenter
             {
                 sections.Add((GetComponentSectionHeading("EnvironmentVariable"), "EnvironmentVariable"));
             }
+            if (content.agents.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("Agent"), "Agent"));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 sections.Add((GetComponentSectionHeading(componentType), componentType));
@@ -229,6 +240,12 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     case "Workflow":
                         renderWorkflows();
+                        break;
+                    case "AI Project":
+                        renderAIModels();
+                        break;
+                    case "Agent":
+                        renderAgents();
                         break;
                     default:
                         solutionDoc.Root.Add(new MdHeading(section.ComponentType, 3));
@@ -316,6 +333,40 @@ namespace PowerDocu.SolutionDocumenter
                 {
                     solutionDoc.Root.Add(new MdTable(new MdTableRow("Name", "Trigger Type", "Flow Type"), rows));
                 }
+            }
+        }
+
+        private void renderAIModels()
+        {
+            solutionDoc.Root.Add(new MdHeading("AI Models", 3));
+            List<AIModel> aiModels = content.solution.Customizations.getAIModels();
+            if (aiModels.Count > 0)
+            {
+                List<MdTableRow> rows = new List<MdTableRow>();
+                foreach (AIModel aiModel in aiModels.OrderBy(o => o.getName()))
+                {
+                    string modelName = aiModel.getName();
+                    MdSpan cell = new MdLinkSpan(modelName, CrossDocLinkHelper.GetAIModelDocMdPath(modelName));
+                    rows.Add(new MdTableRow(cell));
+                }
+                solutionDoc.Root.Add(new MdTable(new MdTableRow("AI Model"), rows));
+            }
+        }
+
+        private void renderAgents()
+        {
+            solutionDoc.Root.Add(new MdHeading("Agents", 3));
+            if (content.agents.Count > 0)
+            {
+                List<MdTableRow> rows = new List<MdTableRow>();
+                foreach (AgentEntity agent in content.agents.OrderBy(a => a.Name))
+                {
+                    MdSpan cell = (content.context?.Config?.documentAgents == true)
+                        ? (MdSpan)new MdLinkSpan(agent.Name, CrossDocLinkHelper.GetAgentDocMdPath(agent.Name))
+                        : new MdTextSpan(agent.Name);
+                    rows.Add(new MdTableRow(cell));
+                }
+                solutionDoc.Root.Add(new MdTable(new MdTableRow("Agent"), rows));
             }
         }
 
@@ -654,6 +705,11 @@ namespace PowerDocu.SolutionDocumenter
             foreach (var app in content.apps)
             {
                 sw.WriteLine(CharsetHelper.GetSafeName(@"AppDoc " + app.Name));
+            }
+
+            foreach (var agent in content.agents)
+            {
+                sw.WriteLine(CharsetHelper.GetSafeName(@"AgentDoc " + agent.Name));
             }
         }
     }

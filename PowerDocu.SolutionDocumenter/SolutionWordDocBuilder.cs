@@ -48,6 +48,10 @@ namespace PowerDocu.SolutionDocumenter
             {
                 statisticsEntries.Add((GetComponentSectionHeading("EnvironmentVariable"), content.solution.EnvironmentVariables.Count));
             }
+            if (content.agents.Count > 0)
+            {
+                statisticsEntries.Add((GetComponentSectionHeading("Agent"), content.agents.Count));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
@@ -186,7 +190,9 @@ namespace PowerDocu.SolutionDocumenter
                 "EnvironmentVariable" => "Environment Variables",
                 "Role" => "Security Roles",
                 "Entity" => "Tables",
+                "AI Project" => "AI Models",
                 "Option Set" => "Option Sets",
+                "Agent" => "Agents",
                 _ => componentType
             };
         }
@@ -201,6 +207,10 @@ namespace PowerDocu.SolutionDocumenter
             if (content.solution.EnvironmentVariables.Count > 0)
             {
                 sections.Add((GetComponentSectionHeading("EnvironmentVariable"), "EnvironmentVariable"));
+            }
+            if (content.agents.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("Agent"), "Agent"));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
@@ -228,6 +238,9 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     case "Workflow":
                         renderWorkflows();
+                        break;
+                    case "Agent":
+                        renderAgents();
                         break;
                     default:
                         AddHeading(section.ComponentType, "Heading2");
@@ -534,92 +547,27 @@ namespace PowerDocu.SolutionDocumenter
         private void renderAIModels()
         {
             AddHeading("AI Models", "Heading2");
-            Paragraph para;
-            Run run;
+            Table table = CreateTable();
+            table.Append(CreateHeaderRow(new Text("AI Model")));
             foreach (AIModel aiModel in content.solution.Customizations.getAIModels().OrderBy(o => o.getName()))
             {
-                AddHeading(aiModel.getName(), "Heading3");
-                AddHeading("Model", "Heading4");
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run(new Text("TODO Model details")));
-                AddHeading("Instructions", "Heading4");
-                Table instructionsTable = CreateTable();
-                Paragraph paraTable = new Paragraph();
-                Run tableRun = paraTable.AppendChild(new Run());
-                string prompt = aiModel.getPrompt();
-                string[] promptLines = prompt.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                foreach (string promptLine in promptLines)
-                {
-                    tableRun.AppendChild(new Text(promptLine));
-                    tableRun.AppendChild(new Break());
-                }
-                instructionsTable.Append(CreateRow(paraTable));
-                body.Append(instructionsTable);
-
-                // Create table for inputs instead of individual text lines
-                List<AIModelInput> inputs = aiModel.getInputs().OrderBy(i => i.Text).ToList();
-                if (inputs.Count > 0)
-                {
-                    AddHeading("Inputs", "Heading4");
-                    Table inputsTable = CreateTable();
-                    inputsTable.Append(CreateHeaderRow(
-                        new Text("Name"),
-                        new Text("ID"),
-                        new Text("Type"),
-                        new Text("Quick Text Value")
-                    ));
-
-                    foreach (AIModelInput input in inputs)
-                    {
-                        inputsTable.Append(CreateRow(
-                            new Text(input.Text ?? ""),
-                            new Text(input.Id ?? ""),
-                            new Text(input.Type ?? ""),
-                            new Text(input.QuickTextValue ?? "")
-                        ));
-                    }
-                    body.Append(inputsTable);
-                }
-
-                AIModelOutput output = aiModel.getOutput();
-                if (output != null)
-                {
-                    AddHeading("Model response", "Heading4");
-                    Table outputTable = CreateTable();
-                    outputTable.Append(CreateRow(new Text("Output Formats"), new Text(string.Join(", ", output.Formats))));
-                    if (!String.IsNullOrEmpty(output.jsonSchema))
-                    {
-                        outputTable.Append(CreateRow(new Text("Schema"), CreateRunWithLinebreaks(JsonUtil.JsonPrettify(output.jsonSchema)))); //todo
-                        outputTable.Append(CreateRow(new Text("Examples"), CreateRunWithLinebreaks(JsonUtil.JsonPrettify(output.jsonExamples)))); //todo
-                    }
-                    body.Append(outputTable);
-                }
-                para = body.AppendChild(new Paragraph());
-                run = para.AppendChild(new Run());
+                table.Append(CreateRow(new Text(aiModel.getName())));
             }
-            AddHeading("Table Relationships", "Heading3");
-            ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
-            int imageWidth, imageHeight;
-            using (FileStream stream = new FileStream(content.folderPath + "dataverse.png", FileMode.Open))
+            body.Append(table);
+            body.AppendChild(new Paragraph(new Run()));
+        }
+
+        private void renderAgents()
+        {
+            AddHeading("Agents", "Heading2");
+            Table table = CreateTable();
+            table.Append(CreateHeaderRow(new Text("Agent")));
+            foreach (AgentEntity agent in content.agents.OrderBy(a => a.Name))
             {
-                using (var image = Image.FromStream(stream, false, false))
-                {
-                    imageWidth = image.Width;
-                    imageHeight = image.Height;
-                }
-                stream.Position = 0;
-                imagePart.FeedData(stream);
+                table.Append(CreateRow(new Text(agent.Name)));
             }
-            ImagePart svgPart = mainPart.AddNewPart<ImagePart>("image/svg+xml", "rId" + (new Random()).Next(100000, 999999));
-            using (FileStream stream = new FileStream(content.folderPath + "dataverse.svg", FileMode.Open))
-            {
-                svgPart.FeedData(stream);
-            }
-            body.AppendChild(new Paragraph(new Run(
-                InsertSvgImage(mainPart.GetIdOfPart(svgPart), mainPart.GetIdOfPart(imagePart), imageWidth, imageHeight)
-            )));
-            para = body.AppendChild(new Paragraph());
-            run = para.AppendChild(new Run());
+            body.Append(table);
+            body.AppendChild(new Paragraph(new Run()));
         }
 
         private void renderWorkflows()

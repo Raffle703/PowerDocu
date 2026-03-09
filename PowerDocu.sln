@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{CA25
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerDocu.Common", "PowerDocu.Common", "{B979D467-1156-78F0-F2D7-290889AF791E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerDocu.AIModelDocumenter", "PowerDocu.AIModelDocumenter\PowerDocu.AIModelDocumenter.csproj", "{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{6C508F7E-82CF-412A-B4C6-5F74797BA50B}.Release|x64.Build.0 = Release|Any CPU
 		{6C508F7E-82CF-412A-B4C6-5F74797BA50B}.Release|x86.ActiveCfg = Release|Any CPU
 		{6C508F7E-82CF-412A-B4C6-5F74797BA50B}.Release|x86.Build.0 = Release|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Debug|x64.Build.0 = Debug|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Debug|x86.Build.0 = Debug|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Release|x64.ActiveCfg = Release|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Release|x64.Build.0 = Release|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Release|x86.ActiveCfg = Release|Any CPU
+		{2E179B1C-3BD5-4781-AC2F-A4EEDEF5CCE1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

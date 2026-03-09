@@ -10,6 +10,7 @@ namespace PowerDocu.SolutionDocumenter
         public List<FlowEntity> flows = new List<FlowEntity>();
         public List<AppEntity> apps = new List<AppEntity>();
         public List<AppModuleEntity> appModules = new List<AppModuleEntity>();
+        public List<AgentEntity> agents = new List<AgentEntity>();
         public SolutionEntity solution;
         public DocumentationContext context;
         public string folderPath,
@@ -25,6 +26,7 @@ namespace PowerDocu.SolutionDocumenter
             this.apps = context.Apps ?? new List<AppEntity>();
             this.flows = context.Flows ?? new List<FlowEntity>();
             this.appModules = context.AppModules ?? new List<AppModuleEntity>();
+            this.agents = context.Agents ?? new List<AgentEntity>();
             filename = CharsetHelper.GetSafeName(solution.UniqueName);
             folderPath = path;
         }

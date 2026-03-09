@@ -57,6 +57,19 @@ namespace PowerDocu.SolutionDocumenter
                 componentSections.Add(section);
             }
 
+            if (content.agents.Count > 0)
+            {
+                var section = new List<(string label, string href, int level)>
+                {
+                    ("Agents", solutionFileName + "#agents", 1)
+                };
+                foreach (AgentEntity agent in content.agents.OrderBy(a => a.Name))
+                {
+                    section.Add((agent.Name, solutionFileName + "#" + SanitizeAnchorId("agent-" + agent.Name), 2));
+                }
+                componentSections.Add(section);
+            }
+
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 string label = GetComponentSectionLabel(componentType);
@@ -88,6 +101,12 @@ namespace PowerDocu.SolutionDocumenter
                             string osName = optionSet.GetDisplayName();
                             if (String.IsNullOrEmpty(osName)) osName = optionSet.Name;
                             section.Add((osName, solutionFileName + "#" + SanitizeAnchorId("optionset-" + optionSet.Name), 2));
+                        }
+                        break;
+                    case "AI Project":
+                        foreach (AIModel aiModel in content.solution.Customizations.getAIModels().OrderBy(o => o.getName()))
+                        {
+                            section.Add((aiModel.getName(), solutionFileName + "#" + SanitizeAnchorId("aimodel-" + aiModel.getName()), 2));
                         }
                         break;
                     default:
@@ -153,6 +172,11 @@ namespace PowerDocu.SolutionDocumenter
                 string envLink = $"<a href=\"#environment-variables\">Environment Variables</a>";
                 statisticsEntries.Add((GetComponentSectionLabel("EnvironmentVariable"), envLink, content.solution.EnvironmentVariables.Count));
             }
+            if (content.agents.Count > 0)
+            {
+                string agentLink = $"<a href=\"#agents\">Agents</a>";
+                statisticsEntries.Add((GetComponentSectionLabel("Agent"), agentLink, content.agents.Count));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
@@ -179,7 +203,9 @@ namespace PowerDocu.SolutionDocumenter
                 "EnvironmentVariable" => "environment-variables",
                 "Role" => "security-roles",
                 "Entity" => "tables",
+                "AI Project" => "ai-models",
                 "Option Set" => "option-sets",
+                "Agent" => "agents",
                 _ => SanitizeAnchorId(componentType)
             };
         }
@@ -195,7 +221,9 @@ namespace PowerDocu.SolutionDocumenter
                 "EnvironmentVariable" => "Environment Variables",
                 "Role" => "Security Roles",
                 "Entity" => "Tables",
+                "AI Project" => "AI Models",
                 "Option Set" => "Option Sets",
+                "Agent" => "Agents",
                 _ => componentType
             };
         }
@@ -295,6 +323,10 @@ namespace PowerDocu.SolutionDocumenter
             {
                 sections.Add((GetComponentSectionLabel("EnvironmentVariable"), "EnvironmentVariable"));
             }
+            if (content.agents.Count > 0)
+            {
+                sections.Add((GetComponentSectionLabel("Agent"), "Agent"));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 sections.Add((GetComponentSectionLabel(componentType), componentType));
@@ -318,6 +350,12 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                     case "Workflow":
                         renderWorkflows(body);
+                        break;
+                    case "AI Project":
+                        renderAIModels(body);
+                        break;
+                    case "Agent":
+                        renderAgents(body);
                         break;
                     default:
                         body.AppendLine(HeadingWithId(3, section.ComponentType, SanitizeAnchorId(section.ComponentType)));
@@ -439,6 +477,42 @@ namespace PowerDocu.SolutionDocumenter
                     string anchorId = SanitizeAnchorId("comp-" + parts.Name);
                     string nameCell = GetCrossDocLinkHtmlForComponent(comp, parts.Name);
                     body.Append($"<tr id=\"{Encode(anchorId)}\"><td>{nameCell}</td><td>{Encode(parts.TriggerInfo)}</td><td>{Encode(parts.FlowType)}</td></tr>");
+                }
+                body.AppendLine(TableEnd());
+            }
+        }
+
+        private void renderAIModels(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(3, "AI Models", "ai-models"));
+            List<AIModel> aiModels = content.solution.Customizations.getAIModels();
+            if (aiModels.Count > 0)
+            {
+                body.Append(TableStart("AI Model"));
+                foreach (AIModel aiModel in aiModels.OrderBy(o => o.getName()))
+                {
+                    string modelName = aiModel.getName();
+                    string anchorId = SanitizeAnchorId("aimodel-" + modelName);
+                    string linkHtml = Link(modelName, CrossDocLinkHelper.GetAIModelDocHtmlPath(modelName));
+                    body.Append($"<tr id=\"{Encode(anchorId)}\"><td>{linkHtml}</td></tr>");
+                }
+                body.AppendLine(TableEnd());
+            }
+        }
+
+        private void renderAgents(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(3, "Agents", "agents"));
+            if (content.agents.Count > 0)
+            {
+                body.Append(TableStart("Agent"));
+                foreach (AgentEntity agent in content.agents.OrderBy(a => a.Name))
+                {
+                    string anchorId = SanitizeAnchorId("agent-" + agent.Name);
+                    string linkHtml = (content.context?.Config?.documentAgents == true)
+                        ? Link(agent.Name, CrossDocLinkHelper.GetAgentDocHtmlPath(agent.Name))
+                        : Encode(agent.Name);
+                    body.Append($"<tr id=\"{Encode(anchorId)}\"><td>{linkHtml}</td></tr>");
                 }
                 body.AppendLine(TableEnd());
             }

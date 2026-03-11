@@ -164,7 +164,21 @@ namespace PowerDocu.AgentDocumenter
 
             // Agents
             AddHeading(content.Agents, "Heading3");
-            body.AppendChild(new Paragraph(new Run(new Text("Sub-agents are not available in the solution export."))));
+            var overviewAgents = content.GetResolvedConnectedAgentInfos();
+            if (overviewAgents.Count > 0)
+            {
+                Table agentsTable = CreateTable();
+                agentsTable.Append(CreateHeaderRow(new Text("Name"), new Text("Connection Type"), new Text("Description"), new Text("History Type")));
+                foreach (var agentInfo in overviewAgents.OrderBy(a => a.Name))
+                {
+                    agentsTable.Append(CreateRow(new Text(agentInfo.Name), new Text(agentInfo.ConnectionType), new Text(agentInfo.Description), new Text(agentInfo.HistoryType)));
+                }
+                body.AppendChild(agentsTable);
+            }
+            else
+            {
+                body.AppendChild(new Paragraph(new Run(new Text("No connected agents configured."))));
+            }
 
             // Topics
             AddHeading(content.Topics, "Heading3");
@@ -200,11 +214,14 @@ namespace PowerDocu.AgentDocumenter
 
             // Overview table
             Table overviewTable = CreateTable();
-            overviewTable.Append(CreateHeaderRow(new Text("Name"), new Text("Source Type"), new Text("Official Source"), new Text("Details")));
+            overviewTable.Append(CreateHeaderRow(new Text("Name"), new Text("Source Type"), new Text("Official Source"), new Text("Details"), new Text("Description")));
             foreach (BotComponent ks in knowledgeSources.OrderBy(k => k.Name))
             {
                 string details = content.agent.GetKnowledgeDetailsSummary(ks);
                 string officialSource = ks.GetOfficialSourceDisplayName();
+                string descriptionPreview = !string.IsNullOrEmpty(ks.Description) && ks.Description.Length > 100
+                    ? ks.Description.Substring(0, 100) + "..."
+                    : ks.Description ?? "";
                 string site = ks.GetKnowledgeSourceSite();
                 OpenXmlElement detailsCell;
                 if (!string.IsNullOrEmpty(site))
@@ -227,12 +244,15 @@ namespace PowerDocu.AgentDocumenter
                 {
                     detailsCell = new Text(details);
                 }
-                overviewTable.Append(CreateRow(new Text(ks.Name), new Text(ks.GetSourceKindDisplayName()), new Text(officialSource), detailsCell));
+                overviewTable.Append(CreateRow(new Text(ks.Name), new Text(ks.GetSourceKindDisplayName()), new Text(officialSource), detailsCell, new Text(descriptionPreview)));
             }
             foreach (BotComponent fk in fileKnowledge.OrderBy(k => k.Name))
             {
                 string mimeType = !string.IsNullOrEmpty(fk.FileDataMimeType) ? $" ({fk.FileDataMimeType})" : "";
-                overviewTable.Append(CreateRow(new Text(fk.Name), new Text("File" + mimeType), new Text(""), new Text(fk.FileDataName ?? "")));
+                string descriptionPreview = !string.IsNullOrEmpty(fk.Description) && fk.Description.Length > 100
+                    ? fk.Description.Substring(0, 100) + "..."
+                    : fk.Description ?? "";
+                overviewTable.Append(CreateRow(new Text(fk.Name), new Text("File" + mimeType), new Text(""), new Text(fk.FileDataName ?? ""), new Text(descriptionPreview)));
             }
             body.Append(overviewTable);
             body.AppendChild(new Paragraph(new Run(new Break())));
@@ -636,7 +656,7 @@ namespace PowerDocu.AgentDocumenter
             AddHeading(content.Variables, "Heading1");
 
             Table table = CreateTable();
-            table.Append(CreateHeaderRow(new Text("Name"), new Text("Scope"), new Text("Data Type"), new Text("AI Visibility"), new Text("External Init")));
+            table.Append(CreateHeaderRow(new Text("Name"), new Text("Scope"), new Text("Data Type"), new Text("AI Visibility"), new Text("External Init"), new Text("Description")));
             foreach (BotComponent variable in variables.OrderBy(v => v.Name))
             {
                 var (scope, aiVisibility, dataType, isExternalInit) = variable.GetVariableDetails();
@@ -645,7 +665,8 @@ namespace PowerDocu.AgentDocumenter
                     new Text(scope),
                     new Text(dataType),
                     new Text(aiVisibility),
-                    new Text(isExternalInit ? "Yes" : "No")));
+                    new Text(isExternalInit ? "Yes" : "No"),
+                    new Text(variable.Description ?? "")));
             }
             body.Append(table);
             body.AppendChild(new Paragraph(new Run(new Break())));

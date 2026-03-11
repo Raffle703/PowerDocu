@@ -1,6 +1,7 @@
-﻿
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using PowerDocu.Common;
 
 namespace PowerDocu.AgentDocumenter
@@ -76,6 +77,81 @@ namespace PowerDocu.AgentDocumenter
                 }
             }
             return tools;
+        }
+
+        /// <summary>
+        /// Returns all connected agent infos with names resolved via the DocumentationContext.
+        /// For parent agents: lists connected child agents + other solution agents.
+        /// For child agents: lists only the parent agent(s) that reference this agent.
+        /// </summary>
+        public List<ConnectedAgentInfo> GetResolvedConnectedAgentInfos()
+        {
+            // Start with explicitly connected agents (InvokeConnectedAgentTaskAction)
+            var result = agent.GetAllConnectedAgentInfos();
+            if (context != null)
+            {
+                // Resolve display names for connected agents
+                foreach (var info in result)
+                {
+                    if (!string.IsNullOrEmpty(info.BotSchemaName))
+                    {
+                        string resolvedName = context.GetAgentNameBySchemaName(info.BotSchemaName);
+                        if (resolvedName != info.BotSchemaName)
+                            info.Name = resolvedName;
+                    }
+                }
+
+                if (result.Count > 0)
+                {
+                    // This agent has connected agents — it's a parent/orchestrator.
+                    // Also add other solution agents not already listed as connected.
+                    var connectedSchemaNames = new HashSet<string>(
+                        result.Where(r => !string.IsNullOrEmpty(r.BotSchemaName)).Select(r => r.BotSchemaName),
+                        StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var otherAgent in context.Agents)
+                    {
+                        if (otherAgent.SchemaName.Equals(agent.SchemaName, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        if (connectedSchemaNames.Contains(otherAgent.SchemaName))
+                            continue;
+                        result.Add(new ConnectedAgentInfo
+                        {
+                            Name = otherAgent.Name,
+                            BotSchemaName = otherAgent.SchemaName,
+                            Description = otherAgent.GetDescription() ?? "",
+                            HistoryType = "",
+                            ConnectionType = "Solution Agent"
+                        });
+                    }
+                }
+                else
+                {
+                    // This agent has no connected agents — it may be a child agent.
+                    // List only parent agents that reference this agent via InvokeConnectedAgentTaskAction.
+                    foreach (var otherAgent in context.Agents)
+                    {
+                        if (otherAgent.SchemaName.Equals(agent.SchemaName, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        var otherConnected = otherAgent.GetAllConnectedAgentInfos();
+                        bool isParent = otherConnected.Any(c =>
+                            !string.IsNullOrEmpty(c.BotSchemaName) &&
+                            c.BotSchemaName.Equals(agent.SchemaName, StringComparison.OrdinalIgnoreCase));
+                        if (isParent)
+                        {
+                            result.Add(new ConnectedAgentInfo
+                            {
+                                Name = otherAgent.Name,
+                                BotSchemaName = otherAgent.SchemaName,
+                                Description = otherAgent.GetDescription() ?? "",
+                                HistoryType = "",
+                                ConnectionType = "Parent Agent"
+                            });
+                        }
+                    }
+                }
+            }
+            return result;
         }
     }
 }

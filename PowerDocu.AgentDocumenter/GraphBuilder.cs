@@ -492,9 +492,9 @@ namespace PowerDocu.AgentDocumenter
                                 string flowIdValue = flowIdNode.ToString();
                                 string flowName = context?.GetFlowNameById(flowIdValue);
                                 string flowLabel = !string.IsNullOrEmpty(flowName)
-                                    ? $"<b>Flow:</b> {System.Web.HttpUtility.HtmlEncode(flowName)}"
-                                    : $"<b>Flow ID:</b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flowIdValue))}";
-                                flowHtml += createCardBodyRow($"<font point-size=\"9\">{flowLabel}</font>");
+                                    ? $"<b>Flow: </b> {System.Web.HttpUtility.HtmlEncode(flowName)}"
+                                    : $"<b>Flow ID: </b> {generateMultiLineText(System.Web.HttpUtility.HtmlEncode(flowIdValue))}";
+                                flowHtml += createCardBodyRow($"{flowLabel}");
                             }
                             if (((YamlMappingNode)action).Children.TryGetValue(new YamlScalarNode("input"), out var flowInputNode)
                                 && flowInputNode is YamlMappingNode flowInputMapping
@@ -851,7 +851,7 @@ namespace PowerDocu.AgentDocumenter
                                 names.Add(System.Web.HttpUtility.HtmlEncode(dnNode.ToString()));
                         }
                         if (names.Count > 0)
-                            result += $"<br/><font point-size=\"9\">{string.Join(", ", names)}</font>";
+                            result += $"<br/>{string.Join(", ", names)}";
                     }
                     return result;
                 }

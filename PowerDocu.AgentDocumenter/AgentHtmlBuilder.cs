@@ -171,7 +171,25 @@ namespace PowerDocu.AgentDocumenter
             }
 
             body.AppendLine(Heading(3, content.Agents));
-            body.AppendLine(Paragraph("Sub-agents are not available in the solution export."));
+            var overviewAgents = content.GetResolvedConnectedAgentInfos();
+            if (overviewAgents.Count > 0)
+            {
+                body.AppendLine(BulletListStart());
+                foreach (var agentInfo in overviewAgents.OrderBy(a => a.Name))
+                {
+                    string suffix = " (" + agentInfo.ConnectionType + ")";
+                    string safeName = CharsetHelper.GetSafeName(agentInfo.Name);
+                    string agentFolder = "AgentDoc " + safeName;
+                    string agentFile = ("index-" + safeName + ".html").Replace(" ", "-");
+                    string agentLink = "../" + agentFolder + "/" + agentFile;
+                    body.AppendLine(BulletItemRaw(Link(agentInfo.Name, agentLink) + Encode(suffix)));
+                }
+                body.AppendLine(BulletListEnd());
+            }
+            else
+            {
+                body.AppendLine(Paragraph("No connected agents configured."));
+            }
 
             body.AppendLine(Heading(3, content.Topics));
             body.AppendLine(BulletListStart());
@@ -576,7 +594,24 @@ namespace PowerDocu.AgentDocumenter
             body.AppendLine(Heading(1, $"Agent - {content.filename}"));
             body.AppendLine(buildMetadataTable());
             body.AppendLine(Heading(2, content.Agents));
-            body.AppendLine(Paragraph("Sub-agents are not available in the solution export."));
+            var agentInfos = content.GetResolvedConnectedAgentInfos();
+            if (agentInfos.Count > 0)
+            {
+                body.Append(TableStart("Name", "Connection Type", "Description", "History Type"));
+                foreach (var agentInfo in agentInfos.OrderBy(a => a.Name))
+                {
+                    string safeName = CharsetHelper.GetSafeName(agentInfo.Name);
+                    string agentFolder = "AgentDoc " + safeName;
+                    string agentFile = ("index-" + safeName + ".html").Replace(" ", "-");
+                    string agentLink = "../" + agentFolder + "/" + agentFile;
+                    body.Append(TableRowRaw(Link(agentInfo.Name, agentLink), Encode(agentInfo.ConnectionType), Encode(agentInfo.Description), Encode(agentInfo.HistoryType)));
+                }
+                body.AppendLine(TableEnd());
+            }
+            else
+            {
+                body.AppendLine(Paragraph("No connected agents configured."));
+            }
             SaveHtmlFile(Path.Combine(content.folderPath, agentsFileName),
                 WrapInHtmlPage($"Agents - {content.filename}", body.ToString(), getNavigationHtml()));
         }

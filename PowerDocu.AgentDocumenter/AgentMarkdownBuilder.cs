@@ -257,7 +257,25 @@ namespace PowerDocu.AgentDocumenter
                 mainDocument.Root.Add(new MdParagraph(new MdTextSpan("No triggers configured.")));
             }
             mainDocument.Root.Add(new MdHeading(content.Agents, 3));
-            mainDocument.Root.Add(new MdParagraph(new MdTextSpan("Sub-agents are not available in the solution export.")));
+            var overviewAgents = content.GetResolvedConnectedAgentInfos();
+            if (overviewAgents.Count > 0)
+            {
+                List<MdListItem> agentsList = new List<MdListItem>();
+                foreach (var agentInfo in overviewAgents.OrderBy(a => a.Name))
+                {
+                    string suffix = " (" + agentInfo.ConnectionType + ")";
+                    string safeName = CharsetHelper.GetSafeName(agentInfo.Name);
+                    string agentFolder = ("AgentDoc " + safeName).Replace(" ", "%20");
+                    string agentFile = ("index " + safeName + ".md").Replace(" ", "-");
+                    string agentLink = "../" + agentFolder + "/" + agentFile;
+                    agentsList.Add(new MdListItem(new MdCompositeSpan(new MdLinkSpan(agentInfo.Name, agentLink), new MdTextSpan(suffix))));
+                }
+                mainDocument.Root.Add(new MdBulletList(agentsList));
+            }
+            else
+            {
+                mainDocument.Root.Add(new MdParagraph(new MdTextSpan("No connected agents configured.")));
+            }
             mainDocument.Root.Add(new MdHeading(content.Topics, 3));
             List<MdListItem> topicsList = new List<MdListItem>();
             foreach (BotComponent topic in content.agent.GetTopics().OrderBy(o => o.Name))
@@ -273,7 +291,14 @@ namespace PowerDocu.AgentDocumenter
             {
                 tableRows.Add(new MdTableRow(kvp.Key, kvp.Value));
             }
-            mainDocument.Root.Add(new MdTable(new MdTableRow(new List<string>() { "Prompt Title", "Prompt" }), tableRows));
+            if (tableRows.Count > 0)
+            {
+                mainDocument.Root.Add(new MdTable(new MdTableRow(new List<string>() { "Prompt Title", "Prompt" }), tableRows));
+            }
+            else
+            {
+                mainDocument.Root.Add(new MdParagraph(new MdTextSpan("No suggested prompts configured.")));
+            }
         }
 
         private MdBulletList getNavigationLinks(bool topLevel = true)
@@ -479,7 +504,14 @@ namespace PowerDocu.AgentDocumenter
                     addTopicDetails(topicDoc, topic);
                 }
             }
-            topicsDocument.Root.Add(new MdTable(new MdTableRow(new List<string>() { "Name", "Type", "Trigger", "Kind" }), tableRows));
+            if (tableRows.Count > 0)
+            {
+                topicsDocument.Root.Add(new MdTable(new MdTableRow(new List<string>() { "Name", "Type", "Trigger", "Kind" }), tableRows));
+            }
+            else
+            {
+                topicsDocument.Root.Add(new MdParagraph(new MdTextSpan("No topics defined.")));
+            }
         }
 
         private void addTopicDetails(MdDocument topicDoc, BotComponent topic)
@@ -789,7 +821,30 @@ namespace PowerDocu.AgentDocumenter
         private void addAgentAgentsInfo()
         {
             agentsDocument.Root.Add(new MdHeading(content.Agents, 2));
-            agentsDocument.Root.Add(new MdParagraph(new MdTextSpan("Sub-agents are not available in the solution export.")));
+            var agentInfos = content.GetResolvedConnectedAgentInfos();
+            if (agentInfos.Count > 0)
+            {
+                List<MdTableRow> rows = new List<MdTableRow>();
+                foreach (var agentInfo in agentInfos.OrderBy(a => a.Name))
+                {
+                    string safeName = CharsetHelper.GetSafeName(agentInfo.Name);
+                    string agentFolder = ("AgentDoc " + safeName).Replace(" ", "%20");
+                    string agentFile = ("index " + safeName + ".md").Replace(" ", "-");
+                    string agentLink = "../" + agentFolder + "/" + agentFile;
+                    rows.Add(new MdTableRow(
+                        new MdLinkSpan(agentInfo.Name, agentLink),
+                        new MdTextSpan(agentInfo.ConnectionType),
+                        new MdTextSpan(agentInfo.Description),
+                        new MdTextSpan(agentInfo.HistoryType)));
+                }
+                agentsDocument.Root.Add(new MdTable(
+                    new MdTableRow(new List<string>() { "Name", "Connection Type", "Description", "History Type" }),
+                    rows));
+            }
+            else
+            {
+                agentsDocument.Root.Add(new MdParagraph(new MdTextSpan("No connected agents configured.")));
+            }
         }
 
         private void AddParagraphsWithLinebreaks(MdDocument document, string text)

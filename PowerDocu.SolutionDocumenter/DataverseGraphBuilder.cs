@@ -48,11 +48,14 @@ namespace PowerDocu.SolutionDocumenter
 
             tableEntities = content.solution.Customizations.getEntities();
             entityRelationships = content.solution.Customizations.getEntityRelationships();
-            List<string> manyToManyEntityNames = entityRelationships
+            List<EntityRelationship> manyToManyRelationships = entityRelationships
                 .Where(o => o.getRelationshipType().Equals("ManyToMany"))
-                .Select(o => o.getFirstEntityName())
                 .ToList();
-            //entityRelationships.First().getReferencedEntityName();
+            // Collect entity names from both sides of M:N relationships
+            HashSet<string> manyToManyEntityNames = new HashSet<string>(
+                manyToManyRelationships.Select(o => o.getFirstEntityName())
+                    .Concat(manyToManyRelationships.Select(o => o.getSecondEntityName()))
+            );
             //create containers for all tables that are being looked up (1-many relationships)
             foreach (
                 TableEntity tableEntity in tableEntities.Where(
@@ -79,7 +82,8 @@ namespace PowerDocu.SolutionDocumenter
                         o => o.getName().ToLower().Equals(lookupColumn.getLogicalName())
                     );
                     SubGraph lookupTableGraph = null;
-                    if (lookupTableEntity == null) {
+                    if (lookupTableEntity == null)
+                    {
                         //check if we have it in the entityrelationships
                         EntityRelationship entityRelationship = entityRelationships
                             .Where(
@@ -94,7 +98,6 @@ namespace PowerDocu.SolutionDocumenter
                                 o =>
                                     o.getName().Equals(entityRelationship.getReferencedEntityName())
                             );
-                            //todo update the label - check if null checks are required
                             if (lookupTableEntity != null)
                             {
                                 lookupTableGraph = rootGraph.GetOrAddSubgraph(
@@ -122,24 +125,22 @@ namespace PowerDocu.SolutionDocumenter
                         createNodeRelationship(lookupTableGraph, currentTableGraph, lookupTableEntity, tableEntity, lookupColumn, "*|1");
                     }
                 }
-                //TODO many-to-many relationships; relationship is between IDs of two tables
-               if(manyToManyEntityNames.Contains(tableEntity.getName())) {
-                    String second = entityRelationships
-                        .Where(o => o.getFirstEntityName().Equals(tableEntity.getName()))
-                        .FirstOrDefault().getSecondEntityName();
-                    //todo  find the table entity for the second entity
+                // Many-to-many relationships: process all M:N relationships where this entity is FirstEntityName
+                foreach (EntityRelationship m2mRelationship in manyToManyRelationships
+                    .Where(o => o.getFirstEntityName().Equals(tableEntity.getName())))
+                {
+                    string secondName = m2mRelationship.getSecondEntityName();
                     TableEntity secondTableEntity = tableEntities.Find(
-                        o => o.getName().Equals(second)
+                        o => o.getName().Equals(secondName)
                     );
-                    ColumnEntity idColumn = tableEntity.getPrimaryColumnEntity();
-                    SubGraph lookupTableGraph = rootGraph.GetOrAddSubgraph(
-                        CharsetHelper.GetSafeName(
-                            "cluster_" + secondTableEntity.getName()
-                        )
-                    );
-                    //todo update the label - check if null checks are required
-                    if (lookupTableGraph != null && secondTableEntity != null)
+                    if (secondTableEntity != null)
                     {
+                        ColumnEntity idColumn = tableEntity.getPrimaryColumnEntity();
+                        SubGraph lookupTableGraph = rootGraph.GetOrAddSubgraph(
+                            CharsetHelper.GetSafeName(
+                                "cluster_" + secondTableEntity.getName()
+                            )
+                        );
                         lookupTableGraph.SetAttribute(
                             "label",
                             secondTableEntity.getLocalizedName()
@@ -149,15 +150,14 @@ namespace PowerDocu.SolutionDocumenter
                         );
                         createNodeRelationship(lookupTableGraph, currentTableGraph, secondTableEntity, tableEntity, idColumn, "*|*");
                     }
-                    //getPrimaryColumnEntity
-                    // "Class ↔ Student"   &harr;
                 }
             }
             rootGraph.ComputeLayout(LayoutEngines.Dot);
             generateImageFiles(rootGraph);
         }
 
-        private void createNodeRelationship(SubGraph lookupTableGraph, SubGraph currentTableGraph, TableEntity lookupTableEntity,  TableEntity tableEntity, ColumnEntity lookupColumn, string edgeLabel) {
+        private void createNodeRelationship(SubGraph lookupTableGraph, SubGraph currentTableGraph, TableEntity lookupTableEntity, TableEntity tableEntity, ColumnEntity lookupColumn, string edgeLabel)
+        {
             string nodeEdgeColor = getHexColor(lookupColumn.getLogicalName());
             Node primaryColumnNode = CreateNode(
                 lookupTableGraph,
@@ -185,7 +185,7 @@ namespace PowerDocu.SolutionDocumenter
         {
             SubGraph subGraph = rootGraph.GetOrAddSubgraph(CharsetHelper.GetSafeName(clusterName));
             subGraph.SetAttribute("label", label);
-            if(color != null)
+            if (color != null)
             {
                 subGraph.SetAttribute("color", color);
             }

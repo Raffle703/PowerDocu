@@ -49,6 +49,7 @@ namespace PowerDocu.GUI
             resourcesCheckBox.Checked = configHelper.documentAppResources;
             controlsCheckBox.Checked = configHelper.documentAppControls;
             addTableOfContentsCheckBox.Checked = configHelper.addTableOfContents;
+            showAllComponentsInGraphCheckBox.Checked = configHelper.showAllComponentsInGraph;
             checkForUpdatesOnLaunchCheckBox.Checked = configHelper.checkForUpdatesOnLaunch;
 
             // Load Word template if available
@@ -193,6 +194,7 @@ namespace PowerDocu.GUI
             configHelper.documentAppResources = resourcesCheckBox.Checked;
             configHelper.documentAppControls = controlsCheckBox.Checked;
             configHelper.addTableOfContents = addTableOfContentsCheckBox.Checked;
+            configHelper.showAllComponentsInGraph = showAllComponentsInGraphCheckBox.Checked;
             configHelper.checkForUpdatesOnLaunch = checkForUpdatesOnLaunchCheckBox.Checked;
         }
 

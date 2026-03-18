@@ -87,6 +87,7 @@ If you can think of ways to improve it, here are some things that you can do:
 
 ## What other documentation options are there for the Power Platform?
 - **Blueprints for Power and Agents** is an Open Source Plugin for GitHub Copilot CLI & Claude Code: https://promptclickrun.github.io/power-agents-blueprint/
+- The **Power CAT Tools** app is your ultimate companion for enhancing your development experience within Microsoft Power Platform. The AI documentation part of it leverages AI to created documentation for you: https://github.com/microsoft/Power-CAT-Tools/blob/main/AI_DOCUMENTATION.md
 - **Mightora Power Platform DevOps Extension** is a collection of pipeline tasks designed to automate and streamline the development, deployment, and management of Power Platform solution: https://marketplace.visualstudio.com/items?itemName=mightoraio.mightora-power-platform-devOps-extension (video: https://www.youtube.com/watch?v=iljeesT50uM)
 - **FlowToVisio**, a tool to create Visio representations of your Cloud Flows: https://github.com/LinkeD365/FlowToVisio
 

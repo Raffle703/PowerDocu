@@ -18,6 +18,19 @@ The configuration file is loaded automatically when the GUI starts. In the GUI, 
 
 ---
 
+## Input
+
+### Items to Document
+
+A semicolon-delimited list of file paths to generate documentation for. Accepted file types are `.zip` (Power Platform solution packages) and `.msapp` (Canvas App packages).
+
+- **CLI flag:** `-q` / `--itemsToDocument <paths>`
+- **GUI:** Use the file picker on the main tab to select files.
+
+> This option is only used via the CLI. In the GUI, files are selected interactively.
+
+---
+
 ## Output Settings
 
 ### Output Format
@@ -44,6 +57,16 @@ An optional path to a Word template file (`.docx`, `.docm`, or `.dotx`) used whe
 - **CLI flag:** `-t` / `--wordTemplate <path>`
 
 > The Word template option is only relevant when the output format includes Word.
+
+### Add Table of Contents
+
+Whether to add a Table of Contents to generated Word documents.
+
+- **Config key:** `addTableOfContents`
+- **Default:** `false`
+- **CLI flag:** `-n` / `--addTableOfContents`
+
+> This setting is only relevant when the output format includes Word.
 
 ---
 
@@ -99,6 +122,14 @@ Whether to generate documentation for Copilot Studio agents (chatbots) contained
 - **Config key:** `documentAgents`
 - **Default:** `true`
 - **CLI flag:** Not available via CLI
+
+### Document Model-Driven Apps
+
+Whether to generate documentation for Model-Driven Apps contained in the solution.
+
+- **Config key:** `documentModelDrivenApps`
+- **Default:** `true`
+- **CLI flag:** `-k` / `--documentModelDrivenApps`
 
 ### Document Apps
 
@@ -218,6 +249,8 @@ Whether PowerDocu should automatically check for newer releases when the GUI app
   "documentAppResources": true,
   "documentAppControls": true,
   "documentDefaultColumns": false,
+  "addTableOfContents": false,
+  "documentModelDrivenApps": true,
   "checkForUpdatesOnLaunch": true
 }
 ```
@@ -228,6 +261,7 @@ Whether PowerDocu should automatically check for newer releases when the GUI app
 
 | Flag | Long Form | Description | Default |
 |---|---|---|---|
+| `-q` | `--itemsToDocument` | Semicolon-delimited list of file paths to document | — |
 | `-w` | `--word` | Output as Word | `false` |
 | `-m` | `--markDown` | Output as Markdown | `false` |
 | `-h` | `--html` | Output as HTML | `false` |
@@ -246,5 +280,7 @@ Whether PowerDocu should automatically check for newer releases when the GUI app
 | `-c` | `--changesOnly` | Document changes only | `false` |
 | `-d` | `--defaultValues` | Document default property values | `false` |
 | `-e` | `--sampledatasources` | Document sample data sources | `false` |
+| `-n` | `--addTableOfContents` | Add Table of Contents to Word docs | `false` |
+| `-k` | `--documentModelDrivenApps` | Document Model-Driven Apps | `true` |
 | `-i` | `--updateIcons` | Update connector icons | `false` |
 | `-o` | `--outputPath` | Output directory path | Item path |

@@ -310,9 +310,14 @@ namespace PowerDocu.AppDocumenter
 
                     dsBody.AppendLine(Heading(4, "DataSource Properties"));
                     dsBody.Append(TableStart("Property", "Value"));
+                    bool isStandardDVTable = datasource.isStandardDataverseTable();
                     foreach (Expression expression in datasource.Properties.OrderBy(o => o.expressionOperator))
                     {
                         if (expression.expressionOperator == "TableDefinition")
+                        {
+                            continue;
+                        }
+                        if (isStandardDVTable && (expression.expressionOperator == "WadlMetadata" || expression.expressionOperator == "NativeCDSDataSourceInfoNameMapping"))
                         {
                             continue;
                         }

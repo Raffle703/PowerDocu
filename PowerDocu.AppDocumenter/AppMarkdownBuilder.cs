@@ -493,9 +493,14 @@ namespace PowerDocu.AppDocumenter
                     dataSourceDocument.Root.Add(new MdTable(new MdTableRow("Property", "Value"), tableRows));
                     tableRows = new List<MdTableRow>();
                     dataSourceDocument.Root.Add(new MdHeading("DataSource Properties", 4));
+                    bool isStandardDVTable = datasource.isStandardDataverseTable();
                     foreach (Expression expression in datasource.Properties.OrderBy(o => o.expressionOperator))
                     {
                         if (expression.expressionOperator == "TableDefinition")
+                        {
+                            continue;
+                        }
+                        if (isStandardDVTable && (expression.expressionOperator == "WadlMetadata" || expression.expressionOperator == "NativeCDSDataSourceInfoNameMapping"))
                         {
                             continue;
                         }

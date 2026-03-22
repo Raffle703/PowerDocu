@@ -455,8 +455,13 @@ namespace PowerDocu.AppDocumenter
                     table.Append(CreateRow(new Text("Name"), new Text(datasource.Name)));
                     table.Append(CreateRow(new Text("Type"), new Text(datasource.Type)));
                     table.Append(CreateMergedRow(new Text("DataSource Properties"), 2, WordDocBuilder.cellHeaderBackground));
+                    bool isStandardDVTable = datasource.isStandardDataverseTable();
                     foreach (Expression expression in datasource.Properties.OrderBy(o => o.expressionOperator))
                     {
+                        if (isStandardDVTable && (expression.expressionOperator == "WadlMetadata" || expression.expressionOperator == "NativeCDSDataSourceInfoNameMapping"))
+                        {
+                            continue;
+                        }
                         if (expression.expressionOperator == "TableDefinition")
                         {
                             AddTableDefinitionSummary(expression, table);

@@ -268,7 +268,7 @@ namespace PowerDocu.GUI
             // Flows: Sort Flow Actions Label
             flowActionSortOrderInfoLabel = new Label()
             {
-                Location = new Point(convertToDPISpecific(15), flowsCheckBox.Location.Y + flowsCheckBox.Height + convertToDPISpecific(10)),
+                Location = new Point(convertToDPISpecific(30), flowsCheckBox.Location.Y + flowsCheckBox.Height + convertToDPISpecific(10)),
                 Text = "Sort Flow Actions",
                 Width = convertToDPISpecific(150),
                 Height = convertToDPISpecific(30)
@@ -595,20 +595,23 @@ namespace PowerDocu.GUI
             };
             selectFileToParseButton = new IconButton()
             {
-                Size = new Size(convertToDPISpecific(42), convertToDPISpecific(42)),
+                Size = new Size(convertToDPISpecific(180), convertToDPISpecific(42)),
                 Location = new Point(convertToDPISpecific(15), convertToDPISpecific(25) + powerDocuInfoLabel.Location.Y + powerDocuInfoLabel.Height),
                 IconChar = IconChar.FileArchive,
                 IconColor = Color.Purple,
-                IconSize = convertToDPISpecific(32),
+                IconSize = convertToDPISpecific(24),
                 IconFont = IconFont.Auto,
-                ImageAlign = ContentAlignment.MiddleCenter,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                Text = "Select Files",
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                TextAlign = ContentAlignment.MiddleLeft,
             };
             selectFileToParseButton.Click += new EventHandler(SelectZIPFileButton_Click);
             generateDocuPanel.Controls.Add(selectFileToParseButton);
             fileToParseInfoLabel = new Label()
             {
-                Location = new Point(convertToDPISpecific(30) + selectFileToParseButton.Width, convertToDPISpecific(25) + powerDocuInfoLabel.Location.Y + powerDocuInfoLabel.Height),
-                Text = "Select Apps, Flows, or Solutions to document. Multiple items can be selected via Ctrl + Left Click.",
+                Location = new Point(convertToDPISpecific(15) + selectFileToParseButton.Width, selectFileToParseButton.Location.Y + (selectFileToParseButton.Height - convertToDPISpecific(13)) / 2),
+                Text = "Select Solution(s) (.zip) or Power Apps file(s) (.msapp). Multiple items can be selected via Ctrl + Left Click.",
                 Width = convertToDPISpecific(450),
                 Height = convertToDPISpecific(60),
                 AutoSize = true
@@ -616,53 +619,74 @@ namespace PowerDocu.GUI
             generateDocuPanel.Controls.Add(fileToParseInfoLabel);
             startDocumentationButton = new IconButton()
             {
-                Size = new Size(convertToDPISpecific(42), convertToDPISpecific(42)),
+                Size = new Size(convertToDPISpecific(180), convertToDPISpecific(42)),
                 Location = new Point(convertToDPISpecific(15), selectFileToParseButton.Location.Y + selectFileToParseButton.Height + convertToDPISpecific(25)),
                 IconChar = IconChar.FileExport,
                 IconColor = Color.Green,
-                IconSize = convertToDPISpecific(32),
+                IconSize = convertToDPISpecific(24),
                 IconFont = IconFont.Auto,
-                ImageAlign = ContentAlignment.MiddleCenter,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                Text = "Generate Documentation",
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                TextAlign = ContentAlignment.MiddleLeft,
                 Visible = false
             };
             startDocumentationButton.Click += new EventHandler(StartDocumentationButton_Click);
             generateDocuPanel.Controls.Add(startDocumentationButton);
             startImageGenerationButton = new IconButton()
             {
-                Size = new Size(convertToDPISpecific(42), convertToDPISpecific(42)),
+                Size = new Size(convertToDPISpecific(180), convertToDPISpecific(42)),
                 Location = new Point(convertToDPISpecific(15), startDocumentationButton.Location.Y + startDocumentationButton.Height + convertToDPISpecific(0)),
                 IconChar = IconChar.Images,
                 IconColor = Color.Green,
-                IconSize = convertToDPISpecific(32),
+                IconSize = convertToDPISpecific(24),
                 IconFont = IconFont.Auto,
-                ImageAlign = ContentAlignment.MiddleCenter,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                Text = "Generate Images Only",
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                TextAlign = ContentAlignment.MiddleLeft,
                 Visible = false
             };
             startImageGenerationButton.Click += new EventHandler(StartImageGenerationButton_Click);
             generateDocuPanel.Controls.Add(startImageGenerationButton);
             openOutputFolderButton = new IconButton()
             {
-                Size = new Size(convertToDPISpecific(42), convertToDPISpecific(42)),
+                Size = new Size(convertToDPISpecific(180), convertToDPISpecific(42)),
                 Location = new Point(convertToDPISpecific(15), startImageGenerationButton.Location.Y + startImageGenerationButton.Height + convertToDPISpecific(0)),
                 IconChar = IconChar.FolderOpen,
                 IconColor = Color.Orange,
-                IconSize = convertToDPISpecific(32),
+                IconSize = convertToDPISpecific(24),
                 IconFont = IconFont.Auto,
-                ImageAlign = ContentAlignment.MiddleCenter,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                Text = "Open Output Folder",
+                TextImageRelation = TextImageRelation.ImageBeforeText,
+                TextAlign = ContentAlignment.MiddleLeft,
                 Visible = false
             };
             openOutputFolderButton.Click += new EventHandler(openOutputFolderButton_Click);
             generateDocuPanel.Controls.Add(openOutputFolderButton);
             selectedFilesToDocumentLabel = new Label()
             {
-                Location = new Point(convertToDPISpecific(30) + startDocumentationButton.Width, selectFileToParseButton.Location.Y + selectFileToParseButton.Height + convertToDPISpecific(25)),
-                Text = "",
+                Location = new Point(convertToDPISpecific(15) + startDocumentationButton.Width, startDocumentationButton.Location.Y + (startDocumentationButton.Height - convertToDPISpecific(13)) / 2),
+                Text = "Start the full documentation generation for the selected files",
                 //Font = new Font(Label.DefaultFont, FontStyle.Bold),
                 Width = convertToDPISpecific(300),
                 Height = convertToDPISpecific(15),
-                AutoSize = true
+                AutoSize = true,
+                Visible = startDocumentationButton.Visible
             };
             generateDocuPanel.Controls.Add(selectedFilesToDocumentLabel);
+            selectedFilesToGenerateImageLabel = new Label()
+            {
+                Location = new Point(convertToDPISpecific(15) + startImageGenerationButton.Width, startImageGenerationButton.Location.Y + (startImageGenerationButton.Height - convertToDPISpecific(13)) / 2),
+                Text = "Start the image generation only for the selected files",
+                //Font = new Font(Label.DefaultFont, FontStyle.Bold),
+                Width = convertToDPISpecific(300),
+                Height = convertToDPISpecific(15),
+                AutoSize = true,
+                Visible = startImageGenerationButton.Visible
+            };
+            generateDocuPanel.Controls.Add(selectedFilesToGenerateImageLabel);
 
             // Process status image list for file tracking
             processStatusImageList = new ImageList()
@@ -722,7 +746,7 @@ namespace PowerDocu.GUI
         private RadioButton documentChangesOnlyRadioButton, documentEverythingRadioButton;
         private Label wordTemplateInfoLabel, fileToParseInfoLabel, outputFormatInfoLabel,
                         flowActionSortOrderInfoLabel, newReleaseLabel, updateConnectorIconsLabel,
-                        selectedFilesToDocumentLabel, statusLabel, saveConfigLabel,
+                        selectedFilesToDocumentLabel, selectedFilesToGenerateImageLabel, statusLabel, saveConfigLabel,
                         documentChangesOrEverythingLabel, powerDocuInfoLabel;
         private TabControl dynamicTabControl;
         private PictureBox statusIconPictureBox;

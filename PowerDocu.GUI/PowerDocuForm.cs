@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using PowerDocu.AppDocumenter;
 using PowerDocu.SolutionDocumenter;
@@ -97,8 +98,6 @@ namespace PowerDocu.GUI
         {
             if (openFileToParseDialog.ShowDialog() == DialogResult.OK)
             {
-                selectedFilesToDocumentLabel.Text =
-                    "Start the full documentation or image generation for the selected files:";
 
                 // Populate the process info list view with selected files
                 processInfoListView.Items.Clear();
@@ -209,12 +208,12 @@ namespace PowerDocu.GUI
 
         private async void StartDocumentationButton_Click(object sender, EventArgs e)
         {
-            startDocumentation(true);
+            await startDocumentationAsync(true);
         }
 
         private async void StartImageGenerationButton_Click(object sender, EventArgs e)
         {
-            startDocumentation(false);
+            await startDocumentationAsync(false);
         }
 
         private void openOutputFolderButton_Click(object sender, EventArgs e)
@@ -224,7 +223,7 @@ namespace PowerDocu.GUI
         }
 
         //fullDocumentation = true to start full documentation generation , false to start image generation
-        private void startDocumentation(bool fullDocumentation = true)
+        private async Task startDocumentationAsync(bool fullDocumentation = true)
         {
             SyncConfigHelper();
             statusLabel.Text =
@@ -235,6 +234,8 @@ namespace PowerDocu.GUI
             startDocumentationButton.IconColor = Color.DarkGray;
             startImageGenerationButton.IconColor = Color.DarkGray;
             openOutputFolderButton.Visible = false;
+            selectFileToParseButton.Enabled = false;
+            SetSettingsControlsEnabled(false);
 
             // Reset all process info items to pending
             for (int idx = 0; idx < processInfoListView.Items.Count; idx++)
@@ -244,9 +245,14 @@ namespace PowerDocu.GUI
             }
             processInfoListView.Refresh();
 
-            for (int i = 0; i < openFileToParseDialog.FileNames.Length; i++)
+            // Capture config and file list before entering background work
+            var config = configHelper;
+            var fileNames = openFileToParseDialog.FileNames;
+            bool anySucceeded = false;
+
+            for (int i = 0; i < fileNames.Length; i++)
             {
-                string fileName = openFileToParseDialog.FileNames[i];
+                string fileName = fileNames[i];
 
                 // Update status to processing
                 if (i < processInfoListView.Items.Count)
@@ -263,28 +269,32 @@ namespace PowerDocu.GUI
                         "Preparing to parse file " + fileName + ", please wait."
                     );
                     Cursor = Cursors.WaitCursor; // change cursor to hourglass type
-                    if (fileName.EndsWith(".zip"))
+
+                    // Run the heavy documentation generation on a background thread
+                    await Task.Run(() =>
                     {
-                        NotificationHelper.SendNotification(
-                            "Trying to process Solution, Apps, and Flows"
-                        );
-                        SolutionDocumentationGenerator.GenerateDocumentation(
-                            fileName,
-                            fullDocumentation,
-                            configHelper
-                        );
-                    }
-                    else if (fileName.EndsWith(".msapp"))
-                    {
-                        AppDocumentationGenerator.GenerateDocumentation(
-                            fileName,
-                            fullDocumentation,
-                            configHelper
-                        );
-                    }
-                    openOutputFolderButton.Visible = true;
-                    NotificationHelper.SendNotification("Documentation generation completed.");
-                    statusLabel.Text = $"Documentation process completed";
+                        if (fileName.EndsWith(".zip"))
+                        {
+                            NotificationHelper.SendNotification(
+                                "Trying to process Solution, Apps, and Flows"
+                            );
+                            SolutionDocumentationGenerator.GenerateDocumentation(
+                                fileName,
+                                fullDocumentation,
+                                config
+                            );
+                        }
+                        else if (fileName.EndsWith(".msapp"))
+                        {
+                            AppDocumentationGenerator.GenerateDocumentation(
+                                fileName,
+                                fullDocumentation,
+                                config
+                            );
+                        }
+                    });
+
+                    anySucceeded = true;
 
                     // Update status to completed
                     if (i < processInfoListView.Items.Count)
@@ -313,13 +323,50 @@ namespace PowerDocu.GUI
                 finally
                 {
                     NotificationHelper.SendNotification(Environment.NewLine);
-                    Cursor = Cursors.Arrow; // change cursor to normal type
-                    startDocumentationButton.Enabled = true;
-                    startImageGenerationButton.Enabled = true;
-                    startDocumentationButton.IconColor = Color.Green;
-                    startImageGenerationButton.IconColor = Color.Green;
                 }
             }
+
+            // Re-enable all controls after all files have been processed
+            Cursor = Cursors.Arrow;
+            startDocumentationButton.Enabled = true;
+            startImageGenerationButton.Enabled = true;
+            startDocumentationButton.IconColor = Color.Green;
+            startImageGenerationButton.IconColor = Color.Green;
+            selectFileToParseButton.Enabled = true;
+            SetSettingsControlsEnabled(true);
+            if (anySucceeded)
+            {
+                openOutputFolderButton.Visible = true;
+            }
+            NotificationHelper.SendNotification("Documentation generation completed.");
+            statusLabel.Text = $"Documentation process completed";
+        }
+
+        private void SetSettingsControlsEnabled(bool enabled)
+        {
+            outputFormatComboBox.Enabled = enabled;
+            flowActionSortOrderComboBox.Enabled = enabled;
+            documentChangesOnlyRadioButton.Enabled = enabled;
+            documentEverythingRadioButton.Enabled = enabled;
+            documentDefaultsCheckBox.Enabled = enabled;
+            documentSampleDataCheckBox.Enabled = enabled;
+            documentDefaultColumnsCheckBox.Enabled = enabled;
+            solutionCheckBox.Enabled = enabled;
+            agentsCheckBox.Enabled = enabled;
+            modelDrivenAppsCheckBox.Enabled = enabled;
+            flowsCheckBox.Enabled = enabled;
+            appsCheckBox.Enabled = enabled;
+            appPropertiesCheckBox.Enabled = enabled;
+            variablesCheckBox.Enabled = enabled;
+            dataSourcesCheckBox.Enabled = enabled;
+            resourcesCheckBox.Enabled = enabled;
+            controlsCheckBox.Enabled = enabled;
+            checkForUpdatesOnLaunchCheckBox.Enabled = enabled;
+            addTableOfContentsCheckBox.Enabled = enabled;
+            showAllComponentsInGraphCheckBox.Enabled = enabled;
+            selectWordTemplateButton.Enabled = enabled;
+            clearWordTemplateButton.Enabled = enabled;
+            saveConfigButton.Enabled = enabled;
         }
 
         private async void ClearWordTemplateButton_Click(object sender, EventArgs e)
@@ -395,8 +442,19 @@ namespace PowerDocu.GUI
 
         public override void Notify(string notification)
         {
-            notificationTextBox.AppendText(notification);
-            notificationTextBox.AppendText(Environment.NewLine);
+            if (notificationTextBox.InvokeRequired)
+            {
+                notificationTextBox.Invoke(new Action(() =>
+                {
+                    notificationTextBox.AppendText(notification);
+                    notificationTextBox.AppendText(Environment.NewLine);
+                }));
+            }
+            else
+            {
+                notificationTextBox.AppendText(notification);
+                notificationTextBox.AppendText(Environment.NewLine);
+            }
         }
     }
 }

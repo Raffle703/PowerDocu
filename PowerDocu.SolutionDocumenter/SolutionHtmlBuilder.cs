@@ -70,6 +70,30 @@ namespace PowerDocu.SolutionDocumenter
                 componentSections.Add(section);
             }
 
+            if (content.solution.AppActions.Count > 0)
+            {
+                componentSections.Add(new List<(string label, string href, int level)>
+                {
+                    ("Command Bar Buttons", solutionFileName + "#app-actions", 1)
+                });
+            }
+
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                componentSections.Add(new List<(string label, string href, int level)>
+                {
+                    ("Setting Definitions", solutionFileName + "#setting-definitions", 1)
+                });
+            }
+
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                componentSections.Add(new List<(string label, string href, int level)>
+                {
+                    ("Formula Definitions", solutionFileName + "#formula-definitions", 1)
+                });
+            }
+
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 string label = GetComponentSectionLabel(componentType);
@@ -178,6 +202,21 @@ namespace PowerDocu.SolutionDocumenter
                 string agentLink = $"<a href=\"#agents\">Agents</a>";
                 statisticsEntries.Add((GetComponentSectionLabel("Agent"), agentLink, content.agents.Count));
             }
+            if (content.solution.AppActions.Count > 0)
+            {
+                string link = $"<a href=\"#app-actions\">Command Bar Buttons</a>";
+                statisticsEntries.Add((GetComponentSectionLabel("AppAction"), link, content.solution.AppActions.Count));
+            }
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                string link = $"<a href=\"#setting-definitions\">Setting Definitions</a>";
+                statisticsEntries.Add((GetComponentSectionLabel("SettingDefinition"), link, content.solution.SettingDefinitions.Count));
+            }
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                string link = $"<a href=\"#formula-definitions\">Formula Definitions</a>";
+                statisticsEntries.Add((GetComponentSectionLabel("FormulaDefinition"), link, content.solution.FormulaDefinitions.Count));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
@@ -207,6 +246,10 @@ namespace PowerDocu.SolutionDocumenter
                 "AI Project" => "ai-models",
                 "Option Set" => "option-sets",
                 "Agent" => "agents",
+                "Web Resource" => "web-resources",
+                "AppAction" => "app-actions",
+                "SettingDefinition" => "setting-definitions",
+                "FormulaDefinition" => "formula-definitions",
                 _ => SanitizeAnchorId(componentType)
             };
         }
@@ -225,6 +268,10 @@ namespace PowerDocu.SolutionDocumenter
                 "AI Project" => "AI Models",
                 "Option Set" => "Option Sets",
                 "Agent" => "Agents",
+                "Web Resource" => "Web Resources",
+                "AppAction" => "Command Bar Buttons",
+                "SettingDefinition" => "Setting Definitions",
+                "FormulaDefinition" => "Formula Definitions",
                 _ => componentType
             };
         }
@@ -309,7 +356,23 @@ namespace PowerDocu.SolutionDocumenter
                 body.Append(TableRow("Default Value", environmentVariable.DefaultValue ?? ""));
                 body.Append(TableRow("Description", environmentVariable.DescriptionDefault ?? ""));
                 body.Append(TableRow("IntroducedVersion", environmentVariable.IntroducedVersion));
+                body.Append(TableRow("Is Required", environmentVariable.IsRequired ? "Yes" : "No"));
+                body.Append(TableRow("Is Customizable", environmentVariable.IsCustomizable ? "Yes" : "No"));
                 body.AppendLine(TableEnd());
+                if (environmentVariable.LocalizedNames.Count > 0 || environmentVariable.Descriptions.Count > 0)
+                {
+                    var langCodes = environmentVariable.LocalizedNames.Keys
+                        .Union(environmentVariable.Descriptions.Keys)
+                        .OrderBy(k => k).ToList();
+                    body.Append(TableStart("Language Code", "Name", "Description"));
+                    foreach (string langCode in langCodes)
+                    {
+                        environmentVariable.LocalizedNames.TryGetValue(langCode, out string name);
+                        environmentVariable.Descriptions.TryGetValue(langCode, out string description);
+                        body.Append(TableRow(langCode, name ?? "", description ?? ""));
+                    }
+                    body.AppendLine(TableEnd());
+                }
             }
         }
 
@@ -327,6 +390,18 @@ namespace PowerDocu.SolutionDocumenter
             if (content.agents.Count > 0)
             {
                 sections.Add((GetComponentSectionLabel("Agent"), "Agent"));
+            }
+            if (content.solution.AppActions.Count > 0)
+            {
+                sections.Add((GetComponentSectionLabel("AppAction"), "AppAction"));
+            }
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                sections.Add((GetComponentSectionLabel("SettingDefinition"), "SettingDefinition"));
+            }
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                sections.Add((GetComponentSectionLabel("FormulaDefinition"), "FormulaDefinition"));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
@@ -358,6 +433,18 @@ namespace PowerDocu.SolutionDocumenter
                     case "Agent":
                         renderAgents(body);
                         break;
+                    case "Web Resource":
+                        renderWebResources(body);
+                        break;
+                    case "AppAction":
+                        renderAppActions(body);
+                        break;
+                    case "SettingDefinition":
+                        renderSettingDefinitions(body);
+                        break;
+                    case "FormulaDefinition":
+                        renderFormulaDefinitions(body);
+                        break;
                     default:
                         body.AppendLine(HeadingWithId(3, section.ComponentType, SanitizeAnchorId(section.ComponentType)));
                         List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == section.ComponentType).ToList();
@@ -377,6 +464,12 @@ namespace PowerDocu.SolutionDocumenter
                         }
                         break;
                 }
+            }
+
+            // Business Process Flows
+            if (content.businessProcessFlows.Count > 0)
+            {
+                renderBusinessProcessFlows(body);
             }
 
             // Solution Component Relationships graph
@@ -490,6 +583,22 @@ namespace PowerDocu.SolutionDocumenter
             }
         }
 
+        private void renderBusinessProcessFlows(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(2, "Business Process Flows", "business-process-flows"));
+            body.AppendLine($"<p>This solution contains {content.businessProcessFlows.Count} Business Process Flow(s).</p>");
+            body.Append(TableStart("Name", "Primary Entity", "Stages", "State"));
+            foreach (var bpf in content.businessProcessFlows.OrderBy(b => b.GetDisplayName(), StringComparer.OrdinalIgnoreCase))
+            {
+                string name = Encode(bpf.GetDisplayName());
+                string entity = Encode(content.context?.GetTableDisplayName(bpf.PrimaryEntity) ?? bpf.PrimaryEntity ?? "");
+                string stages = bpf.Stages.Count.ToString();
+                string state = Encode(bpf.GetStateLabel());
+                body.Append($"<tr><td>{name}</td><td>{entity}</td><td>{stages}</td><td>{state}</td></tr>");
+            }
+            body.AppendLine(TableEnd());
+        }
+
         private void renderAIModels(StringBuilder body)
         {
             body.AppendLine(HeadingWithId(3, "AI Models", "ai-models"));
@@ -523,6 +632,109 @@ namespace PowerDocu.SolutionDocumenter
                     body.Append($"<tr id=\"{Encode(anchorId)}\"><td>{linkHtml}</td></tr>");
                 }
                 body.AppendLine(TableEnd());
+            }
+        }
+
+        private void renderWebResources(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(3, "Web Resources", "web-resources"));
+            List<WebResourceEntity> webResources = content.solution.Customizations.getWebResources();
+            if (webResources.Count > 0)
+            {
+                string wrPagePath = CrossDocLinkHelper.GetWebResourceDocHtmlPath(content.solution.UniqueName);
+                body.AppendLine(ParagraphRaw("See the " + Link("dedicated Web Resources page", wrPagePath) + " for full details, image previews, and source code."));
+                body.Append(TableStart("Display Name", "Name", "Type", "Introduced Version"));
+                foreach (WebResourceEntity wr in webResources.OrderBy(w => w.DisplayName ?? w.Name))
+                {
+                    string displayName = !string.IsNullOrEmpty(wr.DisplayName) ? wr.DisplayName : wr.Name ?? "";
+                    if (wr.IsTextType())
+                    {
+                        string detailPath = CrossDocLinkHelper.GetWebResourceDetailHtmlPath(content.solution.UniqueName, wr.Name);
+                        string nameLink = Link(displayName, detailPath);
+                        body.Append(TableRowRaw(nameLink, Encode(wr.Name ?? ""), Encode(wr.GetTypeDisplayName()), Encode(wr.IntroducedVersion ?? "")));
+                    }
+                    else if (wr.IsImageType())
+                    {
+                        string nameLink = Link(displayName, wrPagePath + "#" + SanitizeAnchorId("wr-" + wr.Name));
+                        body.Append(TableRowRaw(nameLink, Encode(wr.Name ?? ""), Encode(wr.GetTypeDisplayName()), Encode(wr.IntroducedVersion ?? "")));
+                    }
+                    else
+                    {
+                        body.Append(TableRow(
+                            displayName,
+                            wr.Name ?? "",
+                            wr.GetTypeDisplayName(),
+                            wr.IntroducedVersion ?? ""
+                        ));
+                    }
+                }
+                body.AppendLine(TableEnd());
+            }
+        }
+
+        private void renderAppActions(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(3, "Command Bar Buttons", "app-actions"));
+            if (content.solution.AppActions.Count > 0)
+            {
+                body.Append(TableStart("Label", "Table", "App Module", "Icon", "Hidden"));
+                foreach (AppActionEntity action in content.solution.AppActions.OrderBy(a => a.ButtonLabel ?? a.UniqueName))
+                {
+                    body.Append(TableRow(
+                        action.ButtonLabel ?? action.UniqueName ?? "",
+                        action.ContextEntity ?? "",
+                        action.AppModuleName ?? "",
+                        action.FontIcon ?? "",
+                        action.IsHidden ? "Yes" : "No"
+                    ));
+                }
+                body.AppendLine(TableEnd());
+            }
+        }
+
+        private void renderSettingDefinitions(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(3, "Setting Definitions", "setting-definitions"));
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                foreach (SettingDefinitionEntity setting in content.solution.SettingDefinitions.OrderBy(s => s.DisplayName ?? s.UniqueName))
+                {
+                    body.AppendLine(HeadingWithId(4, setting.DisplayName ?? setting.UniqueName, SanitizeAnchorId("setting-" + setting.UniqueName)));
+                    body.Append(TableStart("Property", "Value"));
+                    body.Append(TableRow("Internal Name", setting.UniqueName ?? ""));
+                    body.Append(TableRow("Data Type", setting.GetDataTypeDisplayName()));
+                    body.Append(TableRow("Default Value", setting.DefaultValue ?? ""));
+                    body.Append(TableRow("Description", setting.Description ?? ""));
+                    body.Append(TableRow("Is Customizable", setting.IsCustomizable ? "Yes" : "No"));
+                    body.Append(TableRow("Is Hidden", setting.IsHidden ? "Yes" : "No"));
+                    body.Append(TableRow("Is Overridable", setting.IsOverridable ? "Yes" : "No"));
+                    body.AppendLine(TableEnd());
+                }
+            }
+        }
+
+        private void renderFormulaDefinitions(StringBuilder body)
+        {
+            body.AppendLine(HeadingWithId(3, "Formula Definitions", "formula-definitions"));
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                var grouped = content.solution.FormulaDefinitions
+                    .GroupBy(f => f.TableName)
+                    .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+                foreach (var group in grouped)
+                {
+                    body.AppendLine(HeadingWithId(4, group.Key, SanitizeAnchorId("formula-table-" + group.Key)));
+                    body.Append(TableStart("Column", "Type", "Formula"));
+                    foreach (FormulaDefinitionEntity formula in group.OrderBy(f => f.ColumnName))
+                    {
+                        body.Append(TableRow(
+                            formula.ColumnName ?? "",
+                            formula.Type ?? "",
+                            formula.Content ?? ""
+                        ));
+                    }
+                    body.AppendLine(TableEnd());
+                }
             }
         }
 
@@ -775,6 +987,24 @@ namespace PowerDocu.SolutionDocumenter
                         }
                     }
                 }
+            }
+            // Ribbon Customization Summary
+            List<RibbonCustomizationEntity> ribbonCustomizations = content.solution.Customizations.getRibbonCustomizations();
+            if (ribbonCustomizations.Count > 0)
+            {
+                body.AppendLine(Heading(4, "Ribbon Customizations"));
+                body.Append(TableStart("Table", "Hidden Actions", "Command Definitions", "Display Rules", "Enable Rules"));
+                foreach (RibbonCustomizationEntity ribbon in ribbonCustomizations.OrderBy(r => r.EntityName))
+                {
+                    body.Append(TableRow(
+                        ribbon.EntityName,
+                        ribbon.HiddenActions.Count.ToString(),
+                        ribbon.CommandDefinitionCount.ToString(),
+                        ribbon.DisplayRuleCount.ToString(),
+                        ribbon.EnableRuleCount.ToString()
+                    ));
+                }
+                body.AppendLine(TableEnd());
             }
             body.AppendLine(Heading(4, "Table Relationships"));
             body.AppendLine(ParagraphRaw(Image("Dataverse Table Relationships", "dataverse.svg")));

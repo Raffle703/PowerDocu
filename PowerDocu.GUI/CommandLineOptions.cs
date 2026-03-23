@@ -6,7 +6,7 @@ namespace PowerDocu.GUI
 {
     public class CommandLineOptions
     {
-        [Option('p', "itemsToDocument", HelpText = "Semi colon delimited list of paths of items to document", Required = false, Separator = ';')]
+        [Option('q', "itemsToDocument", HelpText = "Semi colon delimited list of paths of items to document", Required = false, Separator = ';')]
         public IEnumerable<string>? ItemsToDocument { get; set; }
         [Option('o', "outputPath", HelpText = "Destination to write documentation to. Will default to path of item if blank", Required = false)]
         public string? OutputPath { get; set; }
@@ -16,9 +16,9 @@ namespace PowerDocu.GUI
         public bool Word { get; set; }
         [Option('h', "html", HelpText = "Format document as HTML", Required = false)]
         public bool Html { get; set; }
-        [Option('f', "fullDocumentation", HelpText = "Document changes only or all properties", Required = false)]
+        [Option('f', "fullDocumentation", HelpText = "Create full set of documentation (true) or images only (false)", Required = false)]
         public bool FullDocumentation { get; set; }
-        [Option('c', "changesOnly", HelpText = "Create full set of documentation (true) or images only (false)", Required = false)]
+        [Option('c', "changesOnly", HelpText = "Document changes only or all properties", Required = false)]
         public bool ChangesOnly { get; set; }
         [Option('d', "defaultValues", HelpText = "Document Canvas App Default values", Required = false)]
         public bool DefaultValues { get; set; }
@@ -50,8 +50,12 @@ namespace PowerDocu.GUI
         public bool DocumentDefaultColumns { get; set; }
         [Option('n', "addTableOfContents", HelpText = "Add a Table of Contents to generated Word documents", Required = false, Default = false)]
         public bool AddTableOfContents { get; set; }
+        [Option("showAllComponentsInGraph", HelpText = "Show all solution components in the relationship graph, including isolated ones", Required = false, Default = true)]
+        public bool ShowAllComponentsInGraph { get; set; }
         [Option('k', "documentModelDrivenApps", HelpText = "Document Model-Driven Apps", Required = false, Default = true)]
         public bool DocumentModelDrivenApps { get; set; }
+        [Option('u', "documentBusinessProcessFlows", HelpText = "Document Business Process Flows", Required = false, Default = true)]
+        public bool DocumentBusinessProcessFlows { get; set; }
 
         internal string FileFormat => this switch
         {

@@ -6,6 +6,7 @@ using PowerDocu.AgentDocumenter;
 using PowerDocu.AIModelDocumenter;
 using PowerDocu.AppDocumenter;
 using PowerDocu.AppModuleDocumenter;
+using PowerDocu.BPFDocumenter;
 using PowerDocu.FlowDocumenter;
 
 namespace PowerDocu.SolutionDocumenter
@@ -34,7 +35,8 @@ namespace PowerDocu.SolutionDocumenter
             {
                 Config = config,
                 FullDocumentation = fullDocumentation,
-                OutputPath = outputPath
+                OutputPath = outputPath,
+                SourceZipPath = filePath
             };
 
             // Parse flows
@@ -73,6 +75,33 @@ namespace PowerDocu.SolutionDocumenter
                             flow.modernFlowType = context.Customizations.getModernFlowTypeById(flow.ID);
                         }
                     }
+
+                    // Extract Business Process Flows from customizations
+                    if (config.documentBusinessProcessFlows)
+                    {
+                        context.BusinessProcessFlows = context.Customizations.getBusinessProcessFlows() ?? new List<BPFEntity>();
+                        // Parse XAML files to populate stages/steps
+                        if (solutionParser.solution.WorkflowXamlFiles != null)
+                        {
+                            foreach (BPFEntity bpf in context.BusinessProcessFlows)
+                            {
+                                if (!string.IsNullOrEmpty(bpf.XamlFileName))
+                                {
+                                    // Match by filename - XamlFileName is like "/Workflows/Name-GUID.xaml"
+                                    string normalizedPath = bpf.XamlFileName.TrimStart('/');
+                                    foreach (var kvp in solutionParser.solution.WorkflowXamlFiles)
+                                    {
+                                        if (kvp.Key.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase) ||
+                                            kvp.Key.EndsWith(System.IO.Path.GetFileName(normalizedPath), StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            BPFXamlParser.ParseBPFXaml(bpf, kvp.Value);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -80,6 +109,7 @@ namespace PowerDocu.SolutionDocumenter
             NotificationHelper.SendNotification(
                 $"Phase 1 complete: {context.Flows.Count} flow(s), {context.Apps.Count} app(s), " +
                 $"{context.Agents.Count} agent(s), {context.AppModules.Count} app module(s), " +
+                $"{context.BusinessProcessFlows.Count} BPF(s), " +
                 $"{context.Tables.Count} table(s), {context.Roles.Count} role(s)."
             );
 
@@ -117,6 +147,12 @@ namespace PowerDocu.SolutionDocumenter
                 AIModelDocumentationGenerator.GenerateOutput(context, solutionBasePath);
             }
 
+            // Generate Business Process Flow documentation
+            if (config.documentBusinessProcessFlows)
+            {
+                BPFDocumentationGenerator.GenerateOutput(context, solutionBasePath);
+            }
+
             // Generate solution-level documentation (solution overview, model-driven apps, Dataverse graph)
             if (config.documentSolution && context.Solution != null)
             {
@@ -143,15 +179,18 @@ namespace PowerDocu.SolutionDocumenter
                     {
                         NotificationHelper.SendNotification("Creating Solution documentation");
                         SolutionWordDocBuilder wordzip = new SolutionWordDocBuilder(solutionContent, config.wordTemplate, config.documentDefaultColumns, config.addTableOfContents);
+                        WebResourceWordDocBuilder wrWordDoc = new WebResourceWordDocBuilder(solutionContent, config.wordTemplate);
                     }
                     if (config.outputFormat.Equals(OutputFormatHelper.Markdown) || config.outputFormat.Equals(OutputFormatHelper.All))
                     {
                         SolutionMarkdownBuilder mdDoc = new SolutionMarkdownBuilder(solutionContent, config.documentDefaultColumns);
+                        WebResourceMarkdownBuilder wrMdDoc = new WebResourceMarkdownBuilder(solutionContent);
                     }
                     if (config.outputFormat.Equals(OutputFormatHelper.Html) || config.outputFormat.Equals(OutputFormatHelper.All))
                     {
                         NotificationHelper.SendNotification("Creating HTML Solution documentation");
                         SolutionHtmlBuilder htmlDoc = new SolutionHtmlBuilder(solutionContent, config.documentDefaultColumns);
+                        WebResourceHtmlBuilder wrDoc = new WebResourceHtmlBuilder(solutionContent);
                     }
                     FormSvgBuilder.ClearCache();
                 }

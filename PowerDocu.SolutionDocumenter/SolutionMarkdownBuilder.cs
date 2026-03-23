@@ -55,6 +55,21 @@ namespace PowerDocu.SolutionDocumenter
                 var agentLink = new MdLinkSpan("Agents", "#agents");
                 statisticsEntries.Add(("Agents", content.agents.Count, agentLink));
             }
+            if (content.solution.AppActions.Count > 0)
+            {
+                var link = new MdLinkSpan("Command Bar Buttons", "#app-actions");
+                statisticsEntries.Add(("Command Bar Buttons", content.solution.AppActions.Count, link));
+            }
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                var link = new MdLinkSpan("Setting Definitions", "#setting-definitions");
+                statisticsEntries.Add(("Setting Definitions", content.solution.SettingDefinitions.Count, link));
+            }
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                var link = new MdLinkSpan("Formulas", "#formulas");
+                statisticsEntries.Add(("Formulas", content.solution.FormulaDefinitions.Count, link));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
@@ -84,6 +99,10 @@ namespace PowerDocu.SolutionDocumenter
                 "AI Project" => "AI Models",
                 "Option Set" => "Option Sets",
                 "Agent" => "Agents",
+                "Web Resource" => "Web Resources",
+                "AppAction" => "Command Bar Buttons",
+                "SettingDefinition" => "Setting Definitions",
+                "FormulaDefinition" => "Formulas",
                 _ => componentType
             };
         }
@@ -194,11 +213,24 @@ namespace PowerDocu.SolutionDocumenter
                 environmentVariableTableRows.Add(new MdTableRow("Type", environmentVariable.getTypeDisplayName()));
                 environmentVariableTableRows.Add(new MdTableRow("Default Value", environmentVariable.DefaultValue ?? ""));
                 environmentVariableTableRows.Add(new MdTableRow("Description", environmentVariable.DescriptionDefault ?? ""));
+                environmentVariableTableRows.Add(new MdTableRow("Is Required", environmentVariable.IsRequired ? "Yes" : "No"));
+                environmentVariableTableRows.Add(new MdTableRow("Is Customizable", environmentVariable.IsCustomizable ? "Yes" : "No"));
                 environmentVariableTableRows.Add(new MdTableRow("IntroducedVersion", environmentVariable.IntroducedVersion));
-                //table.Append(CreateRow(new Text("IsRequired"), new Text(environmentVariable.IsRequired.ToString())));
-                //table.Append(CreateRow(new Text("IsCustomizable"), new Text(environmentVariable.IsCustomizable.ToString())));
-                //todo descriptions, localizednames
                 solutionDoc.Root.Add(new MdTable(new MdTableRow("Property", "Value"), environmentVariableTableRows));
+                if (environmentVariable.LocalizedNames.Count > 0 || environmentVariable.Descriptions.Count > 0)
+                {
+                    var langCodes = environmentVariable.LocalizedNames.Keys
+                        .Union(environmentVariable.Descriptions.Keys)
+                        .OrderBy(k => k).ToList();
+                    List<MdTableRow> localizedRows = new List<MdTableRow>();
+                    foreach (string langCode in langCodes)
+                    {
+                        environmentVariable.LocalizedNames.TryGetValue(langCode, out string name);
+                        environmentVariable.Descriptions.TryGetValue(langCode, out string description);
+                        localizedRows.Add(new MdTableRow(langCode, name ?? "", description ?? ""));
+                    }
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Language Code", "Name", "Description"), localizedRows));
+                }
             }
         }
 
@@ -216,6 +248,18 @@ namespace PowerDocu.SolutionDocumenter
             if (content.agents.Count > 0)
             {
                 sections.Add((GetComponentSectionHeading("Agent"), "Agent"));
+            }
+            if (content.solution.AppActions.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("AppAction"), "AppAction"));
+            }
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("SettingDefinition"), "SettingDefinition"));
+            }
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("FormulaDefinition"), "FormulaDefinition"));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
@@ -247,6 +291,18 @@ namespace PowerDocu.SolutionDocumenter
                     case "Agent":
                         renderAgents();
                         break;
+                    case "Web Resource":
+                        renderWebResources();
+                        break;
+                    case "AppAction":
+                        renderAppActions();
+                        break;
+                    case "SettingDefinition":
+                        renderSettingDefinitions();
+                        break;
+                    case "FormulaDefinition":
+                        renderFormulaDefinitions();
+                        break;
                     default:
                         solutionDoc.Root.Add(new MdHeading(section.ComponentType, 3));
                         List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == section.ComponentType).ToList();
@@ -265,6 +321,12 @@ namespace PowerDocu.SolutionDocumenter
                         }
                         break;
                 }
+            }
+
+            // Business Process Flows
+            if (content.businessProcessFlows.Count > 0)
+            {
+                renderBusinessProcessFlows();
             }
 
             // Solution Component Relationships graph
@@ -343,6 +405,22 @@ namespace PowerDocu.SolutionDocumenter
             }
         }
 
+        private void renderBusinessProcessFlows()
+        {
+            solutionDoc.Root.Add(new MdHeading("Business Process Flows", 2));
+            solutionDoc.Root.Add(new MdParagraph(new MdTextSpan($"This solution contains {content.businessProcessFlows.Count} Business Process Flow(s).")));
+            List<MdTableRow> rows = new List<MdTableRow>();
+            foreach (var bpf in content.businessProcessFlows.OrderBy(b => b.GetDisplayName(), StringComparer.OrdinalIgnoreCase))
+            {
+                string entity = content.context?.GetTableDisplayName(bpf.PrimaryEntity) ?? bpf.PrimaryEntity ?? "";
+                rows.Add(new MdTableRow(bpf.GetDisplayName(), entity, bpf.Stages.Count.ToString(), bpf.GetStateLabel()));
+            }
+            if (rows.Count > 0)
+            {
+                solutionDoc.Root.Add(new MdTable(new MdTableRow("Name", "Primary Entity", "Stages", "State"), rows));
+            }
+        }
+
         private void renderAIModels()
         {
             solutionDoc.Root.Add(new MdHeading("AI Models", 3));
@@ -374,6 +452,89 @@ namespace PowerDocu.SolutionDocumenter
                     rows.Add(new MdTableRow(cell));
                 }
                 solutionDoc.Root.Add(new MdTable(new MdTableRow("Agent"), rows));
+            }
+        }
+
+        private void renderWebResources()
+        {
+            solutionDoc.Root.Add(new MdHeading("Web Resources", 3));
+            List<WebResourceEntity> webResources = content.solution.Customizations.getWebResources();
+            if (webResources.Count > 0)
+            {
+                string wrPagePath = CrossDocLinkHelper.GetWebResourceDocMdPath(content.solution.UniqueName);
+                solutionDoc.Root.Add(new MdParagraph(
+                    new MdTextSpan("See the "),
+                    new MdLinkSpan("dedicated Web Resources page", wrPagePath),
+                    new MdTextSpan(" for full details, image previews, and source code.")));
+                List<MdTableRow> rows = new List<MdTableRow>();
+                foreach (WebResourceEntity wr in webResources)
+                {
+                    rows.Add(new MdTableRow(!string.IsNullOrEmpty(wr.DisplayName) ? wr.DisplayName : wr.Name ?? "", wr.Name ?? "", wr.GetTypeDisplayName(), wr.IntroducedVersion ?? ""));
+                }
+                solutionDoc.Root.Add(new MdTable(new MdTableRow("Display Name", "Name", "Type", "Introduced Version"), rows));
+            }
+        }
+
+        private void renderAppActions()
+        {
+            solutionDoc.Root.Add(new MdHeading("Command Bar Buttons", 3));
+            if (content.solution.AppActions.Count > 0)
+            {
+                List<MdTableRow> rows = new List<MdTableRow>();
+                foreach (AppActionEntity action in content.solution.AppActions.OrderBy(a => a.ButtonLabel ?? a.Name))
+                {
+                    rows.Add(new MdTableRow(
+                        action.ButtonLabel ?? action.Name ?? "",
+                        action.ContextEntity ?? "",
+                        action.AppModuleName ?? "",
+                        action.FontIcon ?? "",
+                        action.IsHidden ? "Yes" : "No"));
+                }
+                solutionDoc.Root.Add(new MdTable(new MdTableRow("Label", "Table", "App Module", "Icon", "Hidden"), rows));
+            }
+        }
+
+        private void renderSettingDefinitions()
+        {
+            solutionDoc.Root.Add(new MdHeading("Setting Definitions", 3));
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                foreach (SettingDefinitionEntity setting in content.solution.SettingDefinitions.OrderBy(s => s.DisplayName ?? s.UniqueName))
+                {
+                    solutionDoc.Root.Add(new MdHeading(setting.DisplayName ?? setting.UniqueName, 4));
+                    List<MdTableRow> rows = new List<MdTableRow>
+                    {
+                        new MdTableRow("Internal Name", setting.UniqueName ?? ""),
+                        new MdTableRow("Data Type", setting.GetDataTypeDisplayName()),
+                        new MdTableRow("Default Value", setting.DefaultValue ?? ""),
+                        new MdTableRow("Description", setting.Description ?? ""),
+                        new MdTableRow("Is Customizable", setting.IsCustomizable ? "Yes" : "No"),
+                        new MdTableRow("Is Hidden", setting.IsHidden ? "Yes" : "No"),
+                        new MdTableRow("Is Overridable", setting.IsOverridable ? "Yes" : "No")
+                    };
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Property", "Value"), rows));
+                }
+            }
+        }
+
+        private void renderFormulaDefinitions()
+        {
+            solutionDoc.Root.Add(new MdHeading("Formulas", 3));
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                var grouped = content.solution.FormulaDefinitions
+                    .OrderBy(f => f.TableName).ThenBy(f => f.ColumnName)
+                    .GroupBy(f => f.TableName);
+                foreach (var group in grouped)
+                {
+                    solutionDoc.Root.Add(new MdHeading(group.Key, 4));
+                    List<MdTableRow> rows = new List<MdTableRow>();
+                    foreach (FormulaDefinitionEntity formula in group)
+                    {
+                        rows.Add(new MdTableRow(formula.ColumnName ?? "", formula.Type ?? "", formula.Content ?? ""));
+                    }
+                    solutionDoc.Root.Add(new MdTable(new MdTableRow("Column", "Type", "Formula"), rows));
+                }
             }
         }
 
@@ -628,6 +789,23 @@ namespace PowerDocu.SolutionDocumenter
                         }
                     }
                 }
+            }
+            // Ribbon Customization Summary
+            List<RibbonCustomizationEntity> ribbonCustomizations = content.solution.Customizations.getRibbonCustomizations();
+            if (ribbonCustomizations.Count > 0)
+            {
+                solutionDoc.Root.Add(new MdHeading("Ribbon Customizations", 4));
+                List<MdTableRow> ribbonRows = new List<MdTableRow>();
+                foreach (RibbonCustomizationEntity ribbon in ribbonCustomizations)
+                {
+                    ribbonRows.Add(new MdTableRow(
+                        ribbon.EntityName ?? "",
+                        ribbon.HiddenActions.Count.ToString(),
+                        ribbon.CommandDefinitionCount.ToString(),
+                        ribbon.DisplayRuleCount.ToString(),
+                        ribbon.EnableRuleCount.ToString()));
+                }
+                solutionDoc.Root.Add(new MdTable(new MdTableRow("Table", "Hidden Actions", "Command Definitions", "Display Rules", "Enable Rules"), ribbonRows));
             }
             solutionDoc.Root.Add(new MdHeading("Table Relationships", 4));
             solutionDoc.Root.Add(new MdParagraph(new MdImageSpan("Dataverse Table Relationships", "dataverse.svg")));

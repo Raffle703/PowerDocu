@@ -92,6 +92,16 @@ Whether to include default Dataverse table columns in the solution documentation
 
 > This setting is only relevant when **Document Solution** is enabled.
 
+### Show All Components in Graph
+
+Whether to show all solution components in the relationship graph, including isolated ones that have no connections to other components.
+
+- **Config key:** `showAllComponentsInGraph`
+- **Default:** `true`
+- **CLI flag:** `--showAllComponentsInGraph` (no short flag)
+
+> This setting is only relevant when **Document Solution** is enabled.
+
 ### Document Flows
 
 Whether to generate documentation for Power Automate flows contained in the solution.
@@ -130,6 +140,14 @@ Whether to generate documentation for Model-Driven Apps contained in the solutio
 - **Config key:** `documentModelDrivenApps`
 - **Default:** `true`
 - **CLI flag:** `-k` / `--documentModelDrivenApps`
+
+### Document Business Process Flows
+
+Whether to generate documentation for Business Process Flows contained in the solution.
+
+- **Config key:** `documentBusinessProcessFlows`
+- **Default:** `true`
+- **CLI flag:** `-u` / `--documentBusinessProcessFlows`
 
 ### Document Apps
 
@@ -250,7 +268,9 @@ Whether PowerDocu should automatically check for newer releases when the GUI app
   "documentAppControls": true,
   "documentDefaultColumns": false,
   "addTableOfContents": false,
+  "showAllComponentsInGraph": true,
   "documentModelDrivenApps": true,
+  "documentBusinessProcessFlows": true,
   "checkForUpdatesOnLaunch": true
 }
 ```
@@ -282,5 +302,7 @@ Whether PowerDocu should automatically check for newer releases when the GUI app
 | `-e` | `--sampledatasources` | Document sample data sources | `false` |
 | `-n` | `--addTableOfContents` | Add Table of Contents to Word docs | `false` |
 | `-k` | `--documentModelDrivenApps` | Document Model-Driven Apps | `true` |
+| `-u` | `--documentBusinessProcessFlows` | Document Business Process Flows | `true` |
+| | `--showAllComponentsInGraph` | Show all components in relationship graph | `true` |
 | `-i` | `--updateIcons` | Update connector icons | `false` |
 | `-o` | `--outputPath` | Output directory path | Item path |

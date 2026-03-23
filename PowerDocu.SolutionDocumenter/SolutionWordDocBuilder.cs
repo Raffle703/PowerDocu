@@ -52,6 +52,18 @@ namespace PowerDocu.SolutionDocumenter
             {
                 statisticsEntries.Add((GetComponentSectionHeading("Agent"), content.agents.Count));
             }
+            if (content.solution.AppActions.Count > 0)
+            {
+                statisticsEntries.Add((GetComponentSectionHeading("AppAction"), content.solution.AppActions.Count));
+            }
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                statisticsEntries.Add((GetComponentSectionHeading("SettingDefinition"), content.solution.SettingDefinitions.Count));
+            }
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                statisticsEntries.Add((GetComponentSectionHeading("FormulaDefinition"), content.solution.FormulaDefinitions.Count));
+            }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
                 int count = content.solution.Components.Where(c => c.Type == componentType).Count();
@@ -172,11 +184,25 @@ namespace PowerDocu.SolutionDocumenter
                 table.Append(CreateRow(new Text("Type"), new Text(environmentVariable.getTypeDisplayName())));
                 table.Append(CreateRow(new Text("Default Value"), new Text(environmentVariable.DefaultValue)));
                 table.Append(CreateRow(new Text("Description"), new Text(environmentVariable.DescriptionDefault)));
+                table.Append(CreateRow(new Text("Is Required"), new Text(environmentVariable.IsRequired ? "Yes" : "No")));
+                table.Append(CreateRow(new Text("Is Customizable"), new Text(environmentVariable.IsCustomizable ? "Yes" : "No")));
                 table.Append(CreateRow(new Text("IntroducedVersion"), new Text(environmentVariable.IntroducedVersion)));
-                //table.Append(CreateRow(new Text("IsRequired"), new Text(environmentVariable.IsRequired.ToString())));
-                //table.Append(CreateRow(new Text("IsCustomizable"), new Text(environmentVariable.IsCustomizable.ToString())));
-                //todo descriptions, localizednames
                 body.Append(table);
+                if (environmentVariable.LocalizedNames.Count > 0 || environmentVariable.Descriptions.Count > 0)
+                {
+                    var langCodes = environmentVariable.LocalizedNames.Keys
+                        .Union(environmentVariable.Descriptions.Keys)
+                        .OrderBy(k => k).ToList();
+                    Table localizedTable = CreateTable();
+                    localizedTable.Append(CreateHeaderRow(new Text("Language Code"), new Text("Name"), new Text("Description")));
+                    foreach (string langCode in langCodes)
+                    {
+                        environmentVariable.LocalizedNames.TryGetValue(langCode, out string name);
+                        environmentVariable.Descriptions.TryGetValue(langCode, out string description);
+                        localizedTable.Append(CreateRow(new Text(langCode), new Text(name ?? ""), new Text(description ?? "")));
+                    }
+                    body.Append(localizedTable);
+                }
                 body.AppendChild(new Paragraph());
             }
         }
@@ -193,6 +219,10 @@ namespace PowerDocu.SolutionDocumenter
                 "AI Project" => "AI Models",
                 "Option Set" => "Option Sets",
                 "Agent" => "Agents",
+                "Web Resource" => "Web Resources",
+                "AppAction" => "Command Bar Buttons",
+                "SettingDefinition" => "Setting Definitions",
+                "FormulaDefinition" => "Formulas",
                 _ => componentType
             };
         }
@@ -211,6 +241,18 @@ namespace PowerDocu.SolutionDocumenter
             if (content.agents.Count > 0)
             {
                 sections.Add((GetComponentSectionHeading("Agent"), "Agent"));
+            }
+            if (content.solution.AppActions.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("AppAction"), "AppAction"));
+            }
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("SettingDefinition"), "SettingDefinition"));
+            }
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                sections.Add((GetComponentSectionHeading("FormulaDefinition"), "FormulaDefinition"));
             }
             foreach (string componentType in content.solution.GetComponentTypes())
             {
@@ -242,6 +284,18 @@ namespace PowerDocu.SolutionDocumenter
                     case "Agent":
                         renderAgents();
                         break;
+                    case "Web Resource":
+                        renderWebResources();
+                        break;
+                    case "AppAction":
+                        renderAppActions();
+                        break;
+                    case "SettingDefinition":
+                        renderSettingDefinitions();
+                        break;
+                    case "FormulaDefinition":
+                        renderFormulaDefinitions();
+                        break;
                     default:
                         AddHeading(section.ComponentType, "Heading2");
                         List<SolutionComponent> components = content.solution.Components.Where(c => c.Type == section.ComponentType).ToList();
@@ -257,6 +311,13 @@ namespace PowerDocu.SolutionDocumenter
                         break;
                 }
             }
+
+            // Business Process Flows
+            if (content.businessProcessFlows.Count > 0)
+            {
+                renderBusinessProcessFlows();
+            }
+
             // Solution Component Relationships graph
             if (File.Exists(content.folderPath + "solution-components.png") && File.Exists(content.folderPath + "solution-components.svg"))
             {
@@ -569,6 +630,25 @@ namespace PowerDocu.SolutionDocumenter
                     }
                 }
             }
+            // Ribbon Customization Summary
+            List<RibbonCustomizationEntity> ribbonCustomizations = content.solution.Customizations.getRibbonCustomizations();
+            if (ribbonCustomizations.Count > 0)
+            {
+                AddHeading("Ribbon Customizations", "Heading3");
+                Table ribbonTable = CreateTable();
+                ribbonTable.Append(CreateHeaderRow(new Text("Table"), new Text("Hidden Actions"), new Text("Command Definitions"), new Text("Display Rules"), new Text("Enable Rules")));
+                foreach (RibbonCustomizationEntity ribbon in ribbonCustomizations)
+                {
+                    ribbonTable.Append(CreateRow(
+                        new Text(ribbon.EntityName ?? ""),
+                        new Text(ribbon.HiddenActions.Count.ToString()),
+                        new Text(ribbon.CommandDefinitionCount.ToString()),
+                        new Text(ribbon.DisplayRuleCount.ToString()),
+                        new Text(ribbon.EnableRuleCount.ToString())));
+                }
+                body.Append(ribbonTable);
+                body.AppendChild(new Paragraph(new Run()));
+            }
             AddHeading("Table Relationships", "Heading3");
             ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Png);
             int imageWidth, imageHeight;
@@ -620,6 +700,100 @@ namespace PowerDocu.SolutionDocumenter
             body.AppendChild(new Paragraph(new Run()));
         }
 
+        private void renderWebResources()
+        {
+            AddHeading("Web Resources", "Heading2");
+            List<WebResourceEntity> webResources = content.solution.Customizations.getWebResources();
+            if (webResources.Count > 0)
+            {
+                body.AppendChild(new Paragraph(new Run(new Text(
+                    "See the separate Web Resources document for full details, image previews, and source code."))));
+                Table table = CreateTable();
+                table.Append(CreateHeaderRow(new Text("Display Name"), new Text("Name"), new Text("Type"), new Text("Introduced Version")));
+                foreach (WebResourceEntity wr in webResources)
+                {
+                    table.Append(CreateRow(
+                        new Text(!string.IsNullOrEmpty(wr.DisplayName) ? wr.DisplayName : wr.Name ?? ""),
+                        new Text(wr.Name ?? ""),
+                        new Text(wr.GetTypeDisplayName()),
+                        new Text(wr.IntroducedVersion ?? "")));
+                }
+                body.Append(table);
+            }
+            body.AppendChild(new Paragraph(new Run()));
+        }
+
+        private void renderAppActions()
+        {
+            AddHeading("Command Bar Buttons", "Heading2");
+            if (content.solution.AppActions.Count > 0)
+            {
+                Table table = CreateTable();
+                table.Append(CreateHeaderRow(new Text("Label"), new Text("Table"), new Text("App Module"), new Text("Icon"), new Text("Hidden")));
+                foreach (AppActionEntity action in content.solution.AppActions.OrderBy(a => a.ButtonLabel ?? a.Name))
+                {
+                    table.Append(CreateRow(
+                        new Text(action.ButtonLabel ?? action.Name ?? ""),
+                        new Text(action.ContextEntity ?? ""),
+                        new Text(action.AppModuleName ?? ""),
+                        new Text(action.FontIcon ?? ""),
+                        new Text(action.IsHidden ? "Yes" : "No")));
+                }
+                body.Append(table);
+            }
+            body.AppendChild(new Paragraph(new Run()));
+        }
+
+        private void renderSettingDefinitions()
+        {
+            AddHeading("Setting Definitions", "Heading2");
+            if (content.solution.SettingDefinitions.Count > 0)
+            {
+                foreach (SettingDefinitionEntity setting in content.solution.SettingDefinitions.OrderBy(s => s.DisplayName ?? s.UniqueName))
+                {
+                    AddHeading(setting.DisplayName ?? setting.UniqueName, "Heading3");
+                    Table table = CreateTable();
+                    table.Append(CreateHeaderRow(new Text("Property"), new Text("Value")));
+                    table.Append(CreateRow(new Text("Internal Name"), new Text(setting.UniqueName ?? "")));
+                    table.Append(CreateRow(new Text("Data Type"), new Text(setting.GetDataTypeDisplayName())));
+                    table.Append(CreateRow(new Text("Default Value"), new Text(setting.DefaultValue ?? "")));
+                    table.Append(CreateRow(new Text("Description"), new Text(setting.Description ?? "")));
+                    table.Append(CreateRow(new Text("Is Customizable"), new Text(setting.IsCustomizable ? "Yes" : "No")));
+                    table.Append(CreateRow(new Text("Is Hidden"), new Text(setting.IsHidden ? "Yes" : "No")));
+                    table.Append(CreateRow(new Text("Is Overridable"), new Text(setting.IsOverridable ? "Yes" : "No")));
+                    body.Append(table);
+                    body.AppendChild(new Paragraph());
+                }
+            }
+        }
+
+        private void renderFormulaDefinitions()
+        {
+            AddHeading("Formulas", "Heading2");
+            if (content.solution.FormulaDefinitions.Count > 0)
+            {
+                // Group by table name
+                var grouped = content.solution.FormulaDefinitions
+                    .OrderBy(f => f.TableName).ThenBy(f => f.ColumnName)
+                    .GroupBy(f => f.TableName);
+                foreach (var group in grouped)
+                {
+                    AddHeading(group.Key, "Heading3");
+                    Table table = CreateTable();
+                    table.Append(CreateHeaderRow(new Text("Column"), new Text("Type"), new Text("Formula")));
+                    foreach (FormulaDefinitionEntity formula in group)
+                    {
+                        table.Append(CreateRow(
+                            new Text(formula.ColumnName ?? ""),
+                            new Text(formula.Type ?? ""),
+                            new Text(formula.Content ?? "")));
+                    }
+                    body.Append(table);
+                    body.AppendChild(new Paragraph());
+                }
+            }
+        }
+
         private void renderWorkflows()
         {
             AddHeading("Workflow", "Heading2");
@@ -638,6 +812,27 @@ namespace PowerDocu.SolutionDocumenter
                 body.Append(table);
                 body.AppendChild(new Paragraph());
             }
+        }
+
+        private void renderBusinessProcessFlows()
+        {
+            AddHeading("Business Process Flows", "Heading2");
+            body.AppendChild(new Paragraph(new Run(
+                new Text($"This solution contains {content.businessProcessFlows.Count} Business Process Flow(s)."))));
+            Table table = CreateTable();
+            table.Append(CreateHeaderRow(new Text("Name"), new Text("Primary Entity"), new Text("Stages"), new Text("State")));
+            foreach (var bpf in content.businessProcessFlows.OrderBy(b => b.GetDisplayName(), StringComparer.OrdinalIgnoreCase))
+            {
+                string entity = content.context?.GetTableDisplayName(bpf.PrimaryEntity) ?? bpf.PrimaryEntity ?? "";
+                table.Append(CreateRow(
+                    new Text(bpf.GetDisplayName()),
+                    new Text(entity),
+                    new Text(bpf.Stages.Count.ToString()),
+                    new Text(bpf.GetStateLabel())
+                ));
+            }
+            body.Append(table);
+            body.AppendChild(new Paragraph());
         }
 
         private void renderOptionSets()

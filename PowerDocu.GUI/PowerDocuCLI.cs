@@ -93,6 +93,7 @@ namespace PowerDocu.GUI
                 configHelper.addTableOfContents = options.AddTableOfContents;
                 configHelper.showAllComponentsInGraph = options.ShowAllComponentsInGraph;
                 configHelper.documentModelDrivenApps = options.DocumentModelDrivenApps;
+                configHelper.documentBusinessProcessFlows = options.DocumentBusinessProcessFlows;
                 switch (Path.GetExtension(itemToDocument))
                 {
                     case ".zip":

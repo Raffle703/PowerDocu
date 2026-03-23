@@ -7,6 +7,7 @@
     <ProjectReference Include="..\PowerDocu.AgentDocumenter\PowerDocu.AgentDocumenter.csproj" />
     <ProjectReference Include="..\PowerDocu.AppModuleDocumenter\PowerDocu.AppModuleDocumenter.csproj" />
     <ProjectReference Include="..\PowerDocu.AIModelDocumenter\PowerDocu.AIModelDocumenter.csproj" />
+    <ProjectReference Include="..\PowerDocu.BPFDocumenter\PowerDocu.BPFDocumenter.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

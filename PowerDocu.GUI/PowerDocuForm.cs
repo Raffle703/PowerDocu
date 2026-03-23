@@ -42,6 +42,7 @@ namespace PowerDocu.GUI
             documentDefaultColumnsCheckBox.Checked = configHelper.documentDefaultColumns;
             agentsCheckBox.Checked = configHelper.documentAgents;
             modelDrivenAppsCheckBox.Checked = configHelper.documentModelDrivenApps;
+            businessProcessFlowsCheckBox.Checked = configHelper.documentBusinessProcessFlows;
             flowsCheckBox.Checked = configHelper.documentFlows;
             appsCheckBox.Checked = configHelper.documentApps;
             appPropertiesCheckBox.Checked = configHelper.documentAppProperties;
@@ -185,6 +186,7 @@ namespace PowerDocu.GUI
             configHelper.documentDefaultColumns = documentDefaultColumnsCheckBox.Checked;
             configHelper.documentAgents = agentsCheckBox.Checked;
             configHelper.documentModelDrivenApps = modelDrivenAppsCheckBox.Checked;
+            configHelper.documentBusinessProcessFlows = businessProcessFlowsCheckBox.Checked;
             configHelper.documentFlows = flowsCheckBox.Checked;
             configHelper.documentApps = appsCheckBox.Checked;
             configHelper.documentAppProperties = appPropertiesCheckBox.Checked;
@@ -354,6 +356,7 @@ namespace PowerDocu.GUI
             solutionCheckBox.Enabled = enabled;
             agentsCheckBox.Enabled = enabled;
             modelDrivenAppsCheckBox.Enabled = enabled;
+            businessProcessFlowsCheckBox.Enabled = enabled;
             flowsCheckBox.Enabled = enabled;
             appsCheckBox.Enabled = enabled;
             appPropertiesCheckBox.Enabled = enabled;

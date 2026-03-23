@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using PowerDocu.Common;
 using Rubjerg.Graphviz;
 
@@ -9,6 +11,8 @@ namespace PowerDocu.AppDocumenter
 {
     public static class AppDocumentationGenerator
     {
+        private static readonly ConcurrentDictionary<string, object> _appOutputLocks = new();
+
         /// <summary>
         /// Parses apps from the given file without generating documentation output.
         /// Returns the parsed apps and the resolved output path.
@@ -40,40 +44,49 @@ namespace PowerDocu.AppDocumenter
             if (context.Apps == null || !context.Config.documentApps) return;
 
             DateTime startDocGeneration = DateTime.Now;
-            foreach (AppEntity app in context.Apps)
-            {
-                string folderPath = path + CharsetHelper.GetSafeName(@"\AppDoc " + app.Name + @"\");
-                Directory.CreateDirectory(folderPath);
-                BuildScreenNavigationGraph(app, folderPath);
-                if (context.FullDocumentation)
+            Parallel.ForEach(context.Apps,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                app =>
                 {
-                    AppDocumentationContent content = new AppDocumentationContent(app, path, context);
-                    string wordTemplate = (!String.IsNullOrEmpty(context.Config.wordTemplate) && File.Exists(context.Config.wordTemplate))
-                        ? context.Config.wordTemplate : null;
-                    if (context.Config.outputFormat.Equals(OutputFormatHelper.Word) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                    string folderPath = path + CharsetHelper.GetSafeName(@"\AppDoc " + app.Name + @"\");
+                    string appLockKey = Path.GetFullPath(folderPath).ToLowerInvariant();
+                    object appOutputLock = _appOutputLocks.GetOrAdd(appLockKey, _ => new object());
+
+                    lock (appOutputLock)
                     {
-                        NotificationHelper.SendNotification("Creating Word documentation");
-                        if (wordTemplate == null)
+                        Directory.CreateDirectory(folderPath);
+                        BuildScreenNavigationGraph(app, folderPath);
+                        if (context.FullDocumentation)
                         {
-                            AppWordDocBuilder wordzip = new AppWordDocBuilder(content, null, context.Config.documentDefaultValuesCanvasApps, context.Config.documentDefaultValuesCanvasApps, context.Config.documentSampleData, context.Config.addTableOfContents);
+                            AppDocumentationContent content = new AppDocumentationContent(app, path, context);
+                            string wordTemplate = (!String.IsNullOrEmpty(context.Config.wordTemplate) && File.Exists(context.Config.wordTemplate))
+                                ? context.Config.wordTemplate : null;
+                            if (context.Config.outputFormat.Equals(OutputFormatHelper.Word) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                            {
+                                NotificationHelper.SendNotification("Creating Word documentation");
+                                if (wordTemplate == null)
+                                {
+                                    AppWordDocBuilder wordzip = new AppWordDocBuilder(content, null, context.Config.documentDefaultValuesCanvasApps, context.Config.documentDefaultValuesCanvasApps, context.Config.documentSampleData, context.Config.addTableOfContents);
+                                }
+                                else
+                                {
+                                    AppWordDocBuilder wordzip = new AppWordDocBuilder(content, wordTemplate, context.Config.documentChangesOnlyCanvasApps, context.Config.documentDefaultValuesCanvasApps, context.Config.documentSampleData, context.Config.addTableOfContents);
+                                }
+                            }
+                            if (context.Config.outputFormat.Equals(OutputFormatHelper.Markdown) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                            {
+                                NotificationHelper.SendNotification("Creating Markdown documentation");
+                                AppMarkdownBuilder markdownFile = new AppMarkdownBuilder(content);
+                            }
+                            if (context.Config.outputFormat.Equals(OutputFormatHelper.Html) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                            {
+                                NotificationHelper.SendNotification("Creating HTML documentation");
+                                AppHtmlBuilder htmlFile = new AppHtmlBuilder(content, context.Config.documentChangesOnlyCanvasApps, context.Config.documentDefaultValuesCanvasApps, context.Config.documentSampleData);
+                            }
                         }
-                        else
-                        {
-                            AppWordDocBuilder wordzip = new AppWordDocBuilder(content, wordTemplate, context.Config.documentChangesOnlyCanvasApps, context.Config.documentDefaultValuesCanvasApps, context.Config.documentSampleData, context.Config.addTableOfContents);
-                        }
+                        context.Progress?.Increment("Apps");
                     }
-                    if (context.Config.outputFormat.Equals(OutputFormatHelper.Markdown) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
-                    {
-                        NotificationHelper.SendNotification("Creating Markdown documentation");
-                        AppMarkdownBuilder markdownFile = new AppMarkdownBuilder(content);
-                    }
-                    if (context.Config.outputFormat.Equals(OutputFormatHelper.Html) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
-                    {
-                        NotificationHelper.SendNotification("Creating HTML documentation");
-                        AppHtmlBuilder htmlFile = new AppHtmlBuilder(content, context.Config.documentChangesOnlyCanvasApps, context.Config.documentDefaultValuesCanvasApps, context.Config.documentSampleData);
-                    }
-                }
-            }
+                });
             DateTime endDocGeneration = DateTime.Now;
             NotificationHelper.SendNotification($"AppDocumenter: Generated documentation for {context.Apps.Count} app(s) in {(endDocGeneration - startDocGeneration).TotalSeconds} seconds.");
         }
@@ -89,6 +102,8 @@ namespace PowerDocu.AppDocumenter
             Node.IntroduceAttribute(rootGraph, "fillcolor", "");
             Node.IntroduceAttribute(rootGraph, "label", "");
             Node.IntroduceAttribute(rootGraph, "fontname", "helvetica");
+            // Pre-compute screens list once — avoids O(n²) re-filtering inside the destination loop
+            List<ControlEntity> screenControls = app.Controls.Where(o => o.Type == "screen").ToList();
             foreach (ControlEntity ce in app.ScreenNavigations.Keys)
             {
                 List<string> destinations = app.ScreenNavigations[ce];
@@ -122,7 +137,7 @@ namespace PowerDocu.AppDocumenter
                         }
                         else
                         {
-                            foreach (ControlEntity screen in app.Controls.Where(o => o.Type == "screen").ToList())
+                            foreach (ControlEntity screen in screenControls)
                             {
                                 if (destination.Contains(screen.Name))
                                 {

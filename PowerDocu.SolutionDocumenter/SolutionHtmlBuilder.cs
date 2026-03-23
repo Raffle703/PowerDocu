@@ -12,6 +12,18 @@ namespace PowerDocu.SolutionDocumenter
         private readonly SolutionDocumentationContent content;
         private readonly string solutionFileName;
         private readonly bool documentDefaultColumns;
+        private IReadOnlyList<RoleEntity>? _sortedRoles;
+        private IReadOnlyList<TableEntity>? _sortedEntities;
+        private IReadOnlyList<WebResourceEntity>? _sortedWebResources;
+
+        private IReadOnlyList<RoleEntity> GetSortedRoles()
+            => _sortedRoles ??= content.solution.Customizations.getRoles().OrderBy(r => r.Name).ToList();
+
+        private IReadOnlyList<TableEntity> GetSortedEntities()
+            => _sortedEntities ??= content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()).ToList();
+
+        private IReadOnlyList<WebResourceEntity> GetSortedWebResources()
+            => _sortedWebResources ??= content.solution.Customizations.getWebResources().OrderBy(w => w.DisplayName ?? w.Name).ToList();
 
         public SolutionHtmlBuilder(SolutionDocumentationContent contentDocumentation, bool documentDefaultColumns = false)
         {
@@ -106,13 +118,13 @@ namespace PowerDocu.SolutionDocumenter
                 switch (componentType)
                 {
                     case "Role":
-                        foreach (RoleEntity role in content.solution.Customizations.getRoles().OrderBy(r => r.Name))
+                        foreach (RoleEntity role in GetSortedRoles())
                         {
                             section.Add((role.Name, solutionFileName + "#" + SanitizeAnchorId("role-" + role.Name), 2));
                         }
                         break;
                     case "Entity":
-                        foreach (TableEntity table in content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()))
+                        foreach (TableEntity table in GetSortedEntities())
                         {
                             string tableName = table.getLocalizedName();
                             if (String.IsNullOrEmpty(tableName)) tableName = table.getName();
@@ -638,13 +650,13 @@ namespace PowerDocu.SolutionDocumenter
         private void renderWebResources(StringBuilder body)
         {
             body.AppendLine(HeadingWithId(3, "Web Resources", "web-resources"));
-            List<WebResourceEntity> webResources = content.solution.Customizations.getWebResources();
+            IReadOnlyList<WebResourceEntity> webResources = GetSortedWebResources();
             if (webResources.Count > 0)
             {
                 string wrPagePath = CrossDocLinkHelper.GetWebResourceDocHtmlPath(content.solution.UniqueName);
                 body.AppendLine(ParagraphRaw("See the " + Link("dedicated Web Resources page", wrPagePath) + " for full details, image previews, and source code."));
                 body.Append(TableStart("Display Name", "Name", "Type", "Introduced Version"));
-                foreach (WebResourceEntity wr in webResources.OrderBy(w => w.DisplayName ?? w.Name))
+                foreach (WebResourceEntity wr in webResources)
                 {
                     string displayName = !string.IsNullOrEmpty(wr.DisplayName) ? wr.DisplayName : wr.Name ?? "";
                     if (wr.IsTextType())
@@ -772,7 +784,7 @@ namespace PowerDocu.SolutionDocumenter
         private void renderSecurityRoles(StringBuilder body)
         {
             body.AppendLine(HeadingWithId(3, "Security Roles", "security-roles"));
-            foreach (RoleEntity role in content.solution.Customizations.getRoles().OrderBy(r => r.Name))
+            foreach (RoleEntity role in GetSortedRoles())
             {
                 body.AppendLine(HeadingWithId(4, role.Name + " (" + role.ID + ")", SanitizeAnchorId("role-" + role.Name)));
                 body.Append(TableStart("Table", "Create", "Read", "Write", "Delete", "Append", "Append To", "Assign", "Share"));
@@ -808,7 +820,7 @@ namespace PowerDocu.SolutionDocumenter
         private void renderEntities(StringBuilder body)
         {
             body.AppendLine(HeadingWithId(3, "Tables", "tables"));
-            foreach (TableEntity tableEntity in content.solution.Customizations.getEntities().OrderBy(e => e.getLocalizedName()))
+            foreach (TableEntity tableEntity in GetSortedEntities())
             {
                 body.AppendLine(HeadingWithId(4, tableEntity.getLocalizedName() + " (" + tableEntity.getName() + ")", SanitizeAnchorId("table-" + tableEntity.getName())));
                 body.Append(TableStart("Property", "Value"));

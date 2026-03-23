@@ -78,6 +78,7 @@ namespace PowerDocu.AgentDocumenter
                         AgentHtmlBuilder agentHtmlBuilder = new AgentHtmlBuilder(content);
                     }
                 }
+                context.Progress?.Increment("Agents");
             }
             DateTime endDocGeneration = DateTime.Now;
             NotificationHelper.SendNotification(

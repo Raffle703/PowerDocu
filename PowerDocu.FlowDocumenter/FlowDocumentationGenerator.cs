@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using PowerDocu.Common;
 
 namespace PowerDocu.FlowDocumenter
 {
     public static class FlowDocumentationGenerator
     {
+        private static readonly ConcurrentDictionary<string, object> _flowOutputLocks = new();
+
         /// <summary>
         /// Parses flows from the given file without generating documentation output.
         /// Returns the parsed flows and the resolved output path.
@@ -37,43 +41,56 @@ namespace PowerDocu.FlowDocumenter
         {
             if (context.Flows == null || !context.Config.documentFlows) return;
 
+            // Pre-warm ConnectorHelper static state to avoid a race condition during parallel init
+            ConnectorHelper.getConnectorIcon("");
+
             DateTime startDocGeneration = DateTime.Now;
-            foreach (FlowEntity flow in context.Flows)
-            {
-                if (flow.flowType == FlowEntity.FlowType.CloudFlow || flow.flowType == FlowEntity.FlowType.Unknown)
+            Parallel.ForEach(context.Flows,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                flow =>
                 {
-                    GraphBuilder gbzip = new GraphBuilder(flow, path);
-                    gbzip.buildTopLevelGraph();
-                    gbzip.buildDetailedGraph();
-                    if (context.FullDocumentation)
+                    string flowOutputFolder = path + CharsetHelper.GetSafeName(@"\FlowDoc " + flow.Name + @"\");
+                    string flowLockKey = Path.GetFullPath(flowOutputFolder).ToLowerInvariant();
+                    object flowOutputLock = _flowOutputLocks.GetOrAdd(flowLockKey, _ => new object());
+
+                    lock (flowOutputLock)
                     {
-                        FlowActionSortOrder sortOrder = context.Config.flowActionSortOrder switch
+                        if (flow.flowType == FlowEntity.FlowType.CloudFlow || flow.flowType == FlowEntity.FlowType.Unknown)
                         {
-                            "By order of appearance" => FlowActionSortOrder.SortByOrder,
-                            "By name" => FlowActionSortOrder.SortByName,
-                            _ => FlowActionSortOrder.SortByName
-                        };
-                        FlowDocumentationContent content = new FlowDocumentationContent(flow, path, sortOrder, context);
-                        string wordTemplate = (!String.IsNullOrEmpty(context.Config.wordTemplate) && File.Exists(context.Config.wordTemplate))
-                            ? context.Config.wordTemplate : null;
-                        if (context.Config.outputFormat.Equals(OutputFormatHelper.Word) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
-                        {
-                            NotificationHelper.SendNotification("Creating Word documentation");
-                            FlowWordDocBuilder wordzip = new FlowWordDocBuilder(content, wordTemplate, context.Config.addTableOfContents);
+                            GraphBuilder gbzip = new GraphBuilder(flow, path);
+                            gbzip.buildTopLevelGraph();
+                            gbzip.buildDetailedGraph();
+                            if (context.FullDocumentation)
+                            {
+                                FlowActionSortOrder sortOrder = context.Config.flowActionSortOrder switch
+                                {
+                                    "By order of appearance" => FlowActionSortOrder.SortByOrder,
+                                    "By name" => FlowActionSortOrder.SortByName,
+                                    _ => FlowActionSortOrder.SortByName
+                                };
+                                FlowDocumentationContent content = new FlowDocumentationContent(flow, path, sortOrder, context);
+                                string wordTemplate = (!String.IsNullOrEmpty(context.Config.wordTemplate) && File.Exists(context.Config.wordTemplate))
+                                    ? context.Config.wordTemplate : null;
+                                if (context.Config.outputFormat.Equals(OutputFormatHelper.Word) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                                {
+                                    NotificationHelper.SendNotification("Creating Word documentation");
+                                    FlowWordDocBuilder wordzip = new FlowWordDocBuilder(content, wordTemplate, context.Config.addTableOfContents);
+                                }
+                                if (context.Config.outputFormat.Equals(OutputFormatHelper.Markdown) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                                {
+                                    NotificationHelper.SendNotification("Creating Markdown documentation");
+                                    FlowMarkdownBuilder markdownFile = new FlowMarkdownBuilder(content);
+                                }
+                                if (context.Config.outputFormat.Equals(OutputFormatHelper.Html) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
+                                {
+                                    NotificationHelper.SendNotification("Creating HTML documentation");
+                                    FlowHtmlBuilder htmlFile = new FlowHtmlBuilder(content);
+                                }
+                            }
                         }
-                        if (context.Config.outputFormat.Equals(OutputFormatHelper.Markdown) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
-                        {
-                            NotificationHelper.SendNotification("Creating Markdown documentation");
-                            FlowMarkdownBuilder markdownFile = new FlowMarkdownBuilder(content);
-                        }
-                        if (context.Config.outputFormat.Equals(OutputFormatHelper.Html) || context.Config.outputFormat.Equals(OutputFormatHelper.All))
-                        {
-                            NotificationHelper.SendNotification("Creating HTML documentation");
-                            FlowHtmlBuilder htmlFile = new FlowHtmlBuilder(content);
-                        }
+                        context.Progress?.Increment("Flows");
                     }
-                }
-            }
+                });
             DateTime endDocGeneration = DateTime.Now;
             NotificationHelper.SendNotification($"FlowDocumenter: Generated documentation for {context.Flows.Count} flow(s) in {(endDocGeneration - startDocGeneration).TotalSeconds} seconds.");
         }

@@ -11,6 +11,9 @@ namespace PowerDocu.FlowDocumenter
     {
         private readonly string mainFileName, connectionsFileName, variablesFileName, triggerActionsFileName;
         private readonly FlowDocumentationContent content;
+        private string? _navigationHtmlTop;
+        private string? _navigationHtmlSub;
+        private string? _metadataTableHtml;
 
         public FlowHtmlBuilder(FlowDocumentationContent contentdocumentation)
         {
@@ -33,6 +36,11 @@ namespace PowerDocu.FlowDocumenter
         }
 
         private string getNavigationHtml(bool fromSubfolder = false)
+            => fromSubfolder
+                ? (_navigationHtmlSub ??= BuildNavigationHtmlCore(true))
+                : (_navigationHtmlTop ??= BuildNavigationHtmlCore(false));
+
+        private string BuildNavigationHtmlCore(bool fromSubfolder)
         {
             string prefix = fromSubfolder ? "../" : "";
             var navItems = new List<(string label, string href)>();
@@ -57,7 +65,9 @@ namespace PowerDocu.FlowDocumenter
             return sb.ToString();
         }
 
-        private string buildMetadataTable()
+        private string buildMetadataTable() => _metadataTableHtml ??= BuildMetadataTableCore();
+
+        private string BuildMetadataTableCore()
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(TableStart("Flow Name", content.metadata.Name));

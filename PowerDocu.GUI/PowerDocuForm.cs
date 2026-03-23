@@ -11,6 +11,8 @@ namespace PowerDocu.GUI
 {
     public partial class PowerDocuForm : Form
     {
+        private PowerDocuFormProgressReceiver progressReceiver;
+
         public PowerDocuForm()
         {
             InitializeComponent();
@@ -18,6 +20,8 @@ namespace PowerDocu.GUI
             NotificationHelper.AddNotificationReceiver(
                 new PowerDocuFormNotificationReceiver(appStatusTextBox)
             );
+            progressReceiver = new PowerDocuFormProgressReceiver(processInfoListView);
+            NotificationHelper.AddNotificationReceiver(progressReceiver);
             using (var stream = File.OpenRead("Icons\\PowerDocu.ico"))
             {
                 this.Icon = new Icon(stream);
@@ -110,6 +114,7 @@ namespace PowerDocu.GUI
                         Tag = fileName
                     };
                     item.SubItems.Add("Pending");
+                    item.SubItems.Add("");
                     processInfoListView.Items.Add(item);
                 }
                 processInfoListView.Visible = true;
@@ -244,6 +249,7 @@ namespace PowerDocu.GUI
             {
                 processInfoListView.Items[idx].ImageKey = "pending";
                 processInfoListView.Items[idx].SubItems[1].Text = "Pending";
+                processInfoListView.Items[idx].SubItems[2].Text = "";
             }
             processInfoListView.Refresh();
 
@@ -260,10 +266,11 @@ namespace PowerDocu.GUI
                 if (i < processInfoListView.Items.Count)
                 {
                     processInfoListView.Items[i].ImageKey = "processing";
-                    processInfoListView.Items[i].SubItems[1].Text = "Processing...";
                     processInfoListView.EnsureVisible(i);
                     processInfoListView.Refresh();
                 }
+
+                progressReceiver.CurrentIndex = i;
 
                 try
                 {
@@ -327,6 +334,8 @@ namespace PowerDocu.GUI
                     NotificationHelper.SendNotification(Environment.NewLine);
                 }
             }
+
+            progressReceiver.CurrentIndex = -1;
 
             // Re-enable all controls after all files have been processed
             Cursor = Cursors.Arrow;
@@ -399,9 +408,9 @@ namespace PowerDocu.GUI
                     generateDocuPanel.Width - convertToDPISpecific(30),
                     generateDocuPanel.Height - processInfoListView.Location.Y - convertToDPISpecific(15)
                 );
-                if (processInfoListView.Columns.Count > 1)
+                if (processInfoListView.Columns.Count > 2)
                 {
-                    processInfoListView.Columns[0].Width = processInfoListView.Width - processInfoListView.Columns[1].Width - convertToDPISpecific(5);
+                    processInfoListView.Columns[0].Width = processInfoListView.Width - processInfoListView.Columns[1].Width - processInfoListView.Columns[2].Width - convertToDPISpecific(5);
                 }
             }
         }
@@ -431,6 +440,30 @@ namespace PowerDocu.GUI
                     addTableOfContentsCheckBox.ForeColor = Color.Gray;
                 }
             }
+        }
+    }
+
+    public class PowerDocuFormProgressReceiver : NotificationReceiverBase
+    {
+        private readonly ListView listView;
+        public int CurrentIndex { get; set; } = -1;
+
+        public PowerDocuFormProgressReceiver(ListView lv)
+        {
+            listView = lv;
+        }
+
+        public override void Notify(string notification) { }
+
+        public override void NotifyStatus(string notification) => UpdateCell(2, notification);
+
+        public override void NotifyPhase(string notification) => UpdateCell(1, notification);
+
+        private void UpdateCell(int subItemIndex, string text)
+        {
+            if (CurrentIndex < 0 || CurrentIndex >= listView.Items.Count) return;
+            Action update = () => listView.Items[CurrentIndex].SubItems[subItemIndex].Text = text;
+            if (listView.InvokeRequired) listView.Invoke(update); else update();
         }
     }
 

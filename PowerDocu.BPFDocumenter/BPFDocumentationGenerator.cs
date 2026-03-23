@@ -36,6 +36,7 @@ namespace PowerDocu.BPFDocumenter
                         NotificationHelper.SendNotification("Creating HTML documentation for Business Process Flow: " + bpf.GetDisplayName());
                         BPFHtmlBuilder htmlDoc = new BPFHtmlBuilder(content);
                     }
+                    context.Progress?.Increment("BPFs");
                 }
             }
 

@@ -41,6 +41,7 @@ namespace PowerDocu.AIModelDocumenter
                         NotificationHelper.SendNotification("Creating HTML documentation for AI Model: " + aiModel.getName());
                         AIModelHtmlBuilder htmlDoc = new AIModelHtmlBuilder(content);
                     }
+                    context.Progress?.Increment("AI Models");
                 }
             }
 

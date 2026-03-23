@@ -722,7 +722,8 @@ namespace PowerDocu.GUI
                 Visible = false
             };
             processInfoListView.Columns.Add("File", convertToDPISpecific(350));
-            processInfoListView.Columns.Add("Status", convertToDPISpecific(150));
+            processInfoListView.Columns.Add("Status", convertToDPISpecific(100));
+            processInfoListView.Columns.Add("Progress", -2);
             generateDocuPanel.Controls.Add(processInfoListView);
 
             generateDocuPanel.Resize += (sender, e) =>
@@ -731,9 +732,9 @@ namespace PowerDocu.GUI
                     generateDocuPanel.ClientSize.Width - convertToDPISpecific(30),
                     generateDocuPanel.ClientSize.Height - processInfoListView.Location.Y - convertToDPISpecific(10)
                 );
-                if (processInfoListView.Columns.Count > 1)
+                if (processInfoListView.Columns.Count > 2)
                 {
-                    processInfoListView.Columns[0].Width = processInfoListView.ClientSize.Width - processInfoListView.Columns[1].Width - convertToDPISpecific(5);
+                    processInfoListView.Columns[2].Width = processInfoListView.ClientSize.Width - processInfoListView.Columns[0].Width - processInfoListView.Columns[1].Width - convertToDPISpecific(5);
                 }
             };
 

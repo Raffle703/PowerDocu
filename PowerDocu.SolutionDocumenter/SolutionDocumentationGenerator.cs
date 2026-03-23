@@ -27,6 +27,7 @@ namespace PowerDocu.SolutionDocumenter
             }
 
             DateTime startDocGeneration = DateTime.Now;
+            NotificationHelper.SendPhaseUpdate("Parsing");
 
             // ── Phase 1: Parse everything ──────────────────────────────────
             NotificationHelper.SendNotification("Phase 1: Parsing all components...");
@@ -113,8 +114,28 @@ namespace PowerDocu.SolutionDocumenter
                 $"{context.Tables.Count} table(s), {context.Roles.Count} role(s)."
             );
 
+            // Build progress tracker from discovered counts
+            var progress = new ProgressTracker();
+            if (config.documentFlows && context.Flows.Count > 0)
+                progress.Register("Flows", context.Flows.Count);
+            if (config.documentApps && context.Apps.Count > 0)
+                progress.Register("Apps", context.Apps.Count);
+            if (config.documentAgents && context.Agents.Count > 0)
+                progress.Register("Agents", context.Agents.Count);
+            if (config.documentBusinessProcessFlows && context.BusinessProcessFlows.Count > 0)
+                progress.Register("BPFs", context.BusinessProcessFlows.Count);
+            if (config.documentModelDrivenApps && context.AppModules.Count > 0)
+                progress.Register("Model-Driven Apps", context.AppModules.Count);
+            int aiModelCount = context.Customizations?.getAIModels()?.Count ?? 0;
+            if (config.documentSolution && context.Solution != null && aiModelCount > 0)
+                progress.Register("AI Models", aiModelCount);
+            context.Progress = progress;
+            if (progress.BuildString().Length > 0)
+                NotificationHelper.SendStatusUpdate(progress.BuildString());
+
             // ── Phase 2: Generate all documentation ────────────────────────
             NotificationHelper.SendNotification("Phase 2: Generating documentation...");
+            NotificationHelper.SendPhaseUpdate("Documenting");
 
             // Compute centralised solution base path so that all sub-documenters
             // write into the same Solution folder, regardless of how individual

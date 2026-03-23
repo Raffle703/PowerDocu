@@ -46,6 +46,7 @@ namespace PowerDocu.AppModuleDocumenter
                         NotificationHelper.SendNotification("Creating HTML documentation for Model-Driven App: " + appModule.GetDisplayName());
                         AppModuleHtmlBuilder htmlDoc = new AppModuleHtmlBuilder(content);
                     }
+                    context.Progress?.Increment("Model-Driven Apps");
                 }
             }
 

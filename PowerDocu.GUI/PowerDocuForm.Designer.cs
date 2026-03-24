@@ -728,13 +728,14 @@ namespace PowerDocu.GUI
 
             generateDocuPanel.Resize += (sender, e) =>
             {
+                int newWidth = generateDocuPanel.ClientSize.Width - convertToDPISpecific(30);
                 processInfoListView.Size = new Size(
-                    generateDocuPanel.ClientSize.Width - convertToDPISpecific(30),
+                    newWidth,
                     generateDocuPanel.ClientSize.Height - processInfoListView.Location.Y - convertToDPISpecific(10)
                 );
                 if (processInfoListView.Columns.Count > 2)
                 {
-                    processInfoListView.Columns[2].Width = processInfoListView.ClientSize.Width - processInfoListView.Columns[0].Width - processInfoListView.Columns[1].Width - convertToDPISpecific(5);
+                    processInfoListView.Columns[2].Width = newWidth - processInfoListView.Columns[0].Width - processInfoListView.Columns[1].Width - convertToDPISpecific(5);
                 }
             };
 

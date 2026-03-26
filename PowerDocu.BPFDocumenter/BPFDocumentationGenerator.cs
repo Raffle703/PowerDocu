@@ -39,6 +39,10 @@ namespace PowerDocu.BPFDocumenter
                     context.Progress?.Increment("BPFs");
                 }
             }
+            else
+            {
+                context.Progress?.Complete("BPFs");
+            }
 
             DateTime endDocGeneration = DateTime.Now;
             NotificationHelper.SendNotification(

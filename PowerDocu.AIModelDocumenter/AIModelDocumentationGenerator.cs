@@ -44,6 +44,10 @@ namespace PowerDocu.AIModelDocumenter
                     context.Progress?.Increment("AI Models");
                 }
             }
+            else
+            {
+                context.Progress?.Complete("AI Models");
+            }
 
             DateTime endDocGeneration = DateTime.Now;
             NotificationHelper.SendNotification(

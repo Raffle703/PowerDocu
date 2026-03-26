@@ -49,6 +49,10 @@ namespace PowerDocu.AppModuleDocumenter
                     context.Progress?.Increment("Model-Driven Apps");
                 }
             }
+            else
+            {
+                context.Progress?.Complete("Model-Driven Apps");
+            }
 
             DateTime endDocGeneration = DateTime.Now;
             NotificationHelper.SendNotification(
